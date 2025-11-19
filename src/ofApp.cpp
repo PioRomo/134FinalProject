@@ -6,8 +6,8 @@
 //  Octree Test - startup scene
 // 
 //
-//  Student Name:   < Your Name goes Here >
-//  Date: <date of last version>
+//  Student Name:  Schulyer Ng, Pio Romo
+//  Date: 11/19/25
 
 
 #include "ofApp.h"
@@ -38,12 +38,12 @@ void ofApp::setup(){
 	//
 	initLightingAndMaterials();
 
-	terrain.loadModel("geo/moon-houdini.obj");
+	terrain.loadModel("geo/supermario_final.obj");
 	terrain.setScaleNormalization(false);
 
 	lander.position = glm::vec3(0, 0, 0);
 	lander.model.setPosition(0, 0, 0);
-	lander.model.loadModel("geo/lander.obj");
+	lander.model.loadModel("geo/mushroom_lander.obj");
 	bLanderLoaded = true;
 	lander.model.setScaleNormalization(false);
 	cout << "number of meshes: " << lander.model.getNumMeshes() << endl;
