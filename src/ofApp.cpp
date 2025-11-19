@@ -6,8 +6,8 @@
 //  Octree Test - startup scene
 // 
 //
-//  Student Name:  Schulyer Ng, Pio Romo
-//  Date: 11/19/25
+//  Student Name:   < Your Name goes Here >
+//  Date: <date of last version>
 
 
 #include "ofApp.h"
@@ -165,6 +165,36 @@ void ofApp::update() {
 
 	colBoxList.clear();
 	octree.intersect(bounds, octree.root, colBoxList);
+
+	//ALTITUDE AGL DETECTION WITH TELEMETRY (REQ #2)
+	if(bShowAGL){
+		glm::vec3 landerPos = lander.model.getPosition();  
+		//setting ray down
+		glm::vec3 rayDir = glm::vec3(0, -1, 0);
+		Ray downRay(
+			Vector3(landerPos.x, landerPos.y, landerPos.z),
+			Vector3(rayDir.x, rayDir.y, rayDir.z)
+		);
+
+		//intersected node
+		TreeNode hitNode; 
+		bool hit = octree.intersect(downRay, octree.root, hitNode);
+		
+		//save ray start and end 
+		rayStart = landerPos; 
+		rayEnd = landerPos + rayDir * 5000.0f; 
+
+		//terrain hit or no ground found
+		if(hit && !hitNode.points.empty()){
+			ofVec3f hitPoint = octree.mesh.getVertex(hitNode.points[0]);
+			altitudeAGL = landerPos.y - hitPoint.y;  
+			rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
+			bRayHit = true; 
+		} else {
+			altitudeAGL = -1; 
+			bRayHit = false; 
+		}
+	}
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -174,6 +204,17 @@ void ofApp::draw() {
 	glDepthMask(false);
 	if (!bHide) gui.draw();
 	glDepthMask(true);
+
+	//drawing AGL stats (2D, so outside cam)
+	if(bShowAGL){
+		ofSetColor(ofColor::green);
+	
+		if(altitudeAGL >= 0){
+			ofDrawBitmapString("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40);
+		} else {
+			ofDrawBitmapString("AGL: N/A", 20, 40);
+		}
+	}
 
 	cam.begin();
 	ofPushMatrix();
@@ -269,6 +310,18 @@ void ofApp::draw() {
 		ofDrawSphere(p, .02 * d.length());
 	}
 
+	//AGL 3D Ray Intersection
+	if(bShowAGL){
+    	ofSetColor(ofColor::green);
+    	ofSetLineWidth(2.0f); 
+    	ofDrawLine(rayStart, rayEnd);
+
+    	if(bRayHit){
+        	ofSetColor(ofColor::red);
+        	ofDrawSphere(rayEnd, 2.0f);
+    	}
+	}
+
 	ofPopMatrix();
 	cam.end();
 }
@@ -317,6 +370,10 @@ void ofApp::keyPressed(int key) {
 	case 'f':
 		ofToggleFullscreen();
 		break;
+	case 'g':
+	case 'G':
+    	bShowAGL = !bShowAGL;
+    	break;
 	case 'H':
 	case 'h':
 		break;
