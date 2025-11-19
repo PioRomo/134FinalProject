@@ -86,4 +86,12 @@ class ofApp : public ofBaseApp{
 		vector<Box> bboxList;
 
 		const float selectionRange = 4.0;
+
+		// For AGL detection via telemetry sensors
+		bool bShowAGL = false;
+		float altitudeAGL = 0.0f;
+		glm::vec3 rayStart;
+		glm::vec3 rayEnd;
+		bool bRayHit = false;
+
 };
