@@ -51,6 +51,7 @@ class ofApp : public ofBaseApp{
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
 		bool bInDrag = false;
+		ofImage backgroundImage; 
 
 
 		ofxIntSlider numLevels;
