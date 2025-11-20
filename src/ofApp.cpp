@@ -38,12 +38,16 @@ void ofApp::setup(){
 	//
 	initLightingAndMaterials();
 
-	terrain.loadModel("geo/supermario_final.obj");
+	backgroundImage.load("geo/starfield.jpg");
+
+	terrain.loadModel("geo/134FinalScene.obj");
+	//terrain.loadModel("geo/supermario_final.obj");
 	terrain.setScaleNormalization(false);
 
 	lander.position = glm::vec3(0, 0, 0);
 	lander.model.setPosition(0, 0, 0);
-	lander.model.loadModel("geo/mushroom_lander.obj");
+	lander.model.loadModel("geo/134Final_lander.obj");
+	//lander.model.loadModel("geo/mushroom_lander.obj");
 	bLanderLoaded = true;
 	lander.model.setScaleNormalization(false);
 	cout << "number of meshes: " << lander.model.getNumMeshes() << endl;
@@ -199,7 +203,10 @@ void ofApp::update() {
 //--------------------------------------------------------------
 void ofApp::draw() {
 
-	ofBackground(ofColor::black);
+	ofSetColor(255);
+	backgroundImage.draw(0,0, ofGetWidth(), ofGetHeight());
+	//Fixes issues with models not loading in 
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glDepthMask(false);
 	if (!bHide) gui.draw();
@@ -212,7 +219,7 @@ void ofApp::draw() {
 		if(altitudeAGL >= 0){
 			ofDrawBitmapString("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40);
 		} else {
-			ofDrawBitmapString("AGL: N/A", 20, 40);
+			ofDrawBitmapString("AGL: N/A", ofGetWidth() - 200, 40);
 		}
 	}
 
