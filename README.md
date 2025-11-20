@@ -20,3 +20,5 @@ Additionally, we've added a ray from the lander to the ground to help better vis
 #### Sound
 #### Dragging the Lander
 #### 2D Background Image
+###### Pio Romo
+Starfield image gives the game a more "gamey" feel! 
