@@ -1,4 +1,3 @@
-
 //--------------------------------------------------------------
 //
 //  Kevin M. Smith
@@ -14,351 +13,267 @@
 #include "Util.h"
 #include "iomanip"
 
-
 //--------------------------------------------------------------
 // setup scene, lighting, state and load geometry
 //
 void ofApp::setup(){
-	bWireframe = false;
-	bDisplayPoints = false;
-	bAltKeyDown = false;
-	bCtrlKeyDown = false;
-	bLanderLoaded = false;
-	bTerrainSelected = true;
-//	ofSetWindowShape(1024, 768);
-	cam.setDistance(10);
-	cam.setNearClip(.1);
-	cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
-	ofSetVerticalSync(true);
-	cam.disableMouseInput();
-	ofEnableSmoothing();
-	ofEnableDepthTest();
+    bWireframe = false;
+    bDisplayPoints = false;
+    bAltKeyDown = false;
+    bCtrlKeyDown = false;
+    bLanderLoaded = false;
+    bTerrainSelected = true;
 
-	// setup rudimentary lighting 
-	//
-	initLightingAndMaterials();
+    cam.setDistance(10);
+    cam.setNearClip(.1);
+    cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
+    ofSetVerticalSync(true);
+    cam.disableMouseInput();
+    ofEnableSmoothing();
+    ofEnableDepthTest();
 
-	backgroundImage.load("geo/starfield.jpg");
+	//setting particle size 
+	glEnable(GL_PROGRAM_POINT_SIZE);
 
-	terrain.loadModel("geo/134FinalScene.obj");
-	//terrain.loadModel("geo/supermario_final.obj");
-	terrain.setScaleNormalization(false);
+    // setup rudimentary lighting 
+    initLightingAndMaterials();
 
-	lander.position = glm::vec3(0, 0, 0);
-	lander.model.setPosition(0, 0, 0);
-	lander.model.loadModel("geo/134Final_lander.obj");
-	//lander.model.loadModel("geo/mushroom_lander.obj");
-	bLanderLoaded = true;
-	lander.model.setScaleNormalization(false);
-	cout << "number of meshes: " << lander.model.getNumMeshes() << endl;
-	bboxList.clear();
-	for (int i = 0; i < lander.model.getMeshCount(); i++) {
-		bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
-	}
+    backgroundImage.load("geo/starfield.jpg");
 
-	// create sliders for testing
-	//
-	gui.setup();
-	gui.add(numLevels.setup("Number of Octree Levels", 1, 1, 10));
-	gui.add(bTimingInfo.setup("Enable Timing Info", false));
-	bHide = false;
+    terrain.loadModel("geo/134FinalScene.obj");
+    terrain.setScaleNormalization(false);
 
-	//  Create Octree for testing.
-	//
-	float startTime = ofGetElapsedTimeMillis();
-	octree.create(terrain.getMesh(0), 20);
-	float endTime = ofGetElapsedTimeMillis();
-	
-	cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
-	cout << "Time to build the tree (ms): " << endTime - startTime << endl;
+    lander.position = glm::vec3(0, 0, 0);
+    lander.model.setPosition(0, 0, 0);
+    lander.model.loadModel("geo/134Final_lander.obj");
+    bLanderLoaded = true;
+    lander.model.setScaleNormalization(false);
 
-	testBox = Box(Vector3(3, 3, 0), Vector3(5, 5, 2));
+    cout << "number of meshes: " << lander.model.getNumMeshes() << endl;
+    bboxList.clear();
+    for (int i = 0; i < lander.model.getMeshCount(); i++) {
+        bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
+    }
 
+    // create sliders for testing
+    gui.setup();
+    gui.add(numLevels.setup("Number of Octree Levels", 1, 1, 10));
+    gui.add(bTimingInfo.setup("Enable Timing Info", false));
+    bHide = false;
 
+    //  Create Octree for testing.
+    float startTime = ofGetElapsedTimeMillis();
+    octree.create(terrain.getMesh(0), 20);
+    float endTime = ofGetElapsedTimeMillis();
+    
+    cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
+    cout << "Time to build the tree (ms): " << endTime - startTime << endl;
+
+    testBox = Box(Vector3(3, 3, 0), Vector3(5, 5, 2));
+
+    // setup particle exhaust
+    particleShader.load("particle.vert", "particle.frag");
+    glm::vec3 landerPos = lander.model.getPosition();
+    exhaustEmitter.position = landerPos - glm::vec3(0, 1, 0);
+    exhaustEmitter.rate = 100;
+    exhaustEmitter.velocity = glm::vec3(0, -5, 0);
+    exhaustEmitter.oneShot = false;
 }
- 
+
 //--------------------------------------------------------------
 // incrementally update scene (animation)
 //
 void ofApp::update() {
-	//collided
-	//move the lander normal to the collision face and recheck collission
-	//if (bCollision && colBoxList.size() >= 10) {
-	//	vector<int> collisionPoints;
-	//	//find the points of each box
-	//	for (auto & box : colBoxList) {
-	//		vector<int> points;
-	//		octree.getMeshPointsInBox(octree.mesh, octree.root.points, box, points);
-	//		collisionPoints.push_back(points[0]);
-	//	}
-	//	//get the average normal vector of all the points
-	//	glm::vec3 averageNormal(0,0,0);
-	//	for (auto & index : collisionPoints) {
-	//		averageNormal += octree.mesh.getNormal(index);
-	//	}
-	//	averageNormal /= collisionPoints.size();
-	//	averageNormal = glm::normalize(averageNormal);
-	//	cout << averageNormal << endl;
-	//	//move lander along that vector
-	//	lander.model.setPosition(lander.model.getPosition().x + averageNormal.x/4, lander.model.getPosition().y + averageNormal.y/4, lander.model.getPosition().z + averageNormal.z/4);
+    // rotate clockwise
+    if (rightPressed) {
+        RotationalShapeForce rotation(100);
+        rotation.updateForce(&lander);
+    }
+    // rotate counterclockwise
+    if (leftPressed) {
+        RotationalShapeForce rotation(-100);
+        rotation.updateForce(&lander);
+    }
+    // forward/backward
+    if (upPressed || downPressed || shiftPressed || ctrlPressed) {
+        glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
+        ofVec3f thrustVector(0,0,0);
+        if(upPressed) thrustVector = ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
+        if(downPressed) thrustVector = ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
+        if(shiftPressed) thrustVector = ofVec3f(0, 1, 0) * 50;
+        if(ctrlPressed) thrustVector = ofVec3f(0, -1, 0) * 50;
+        ThrustShapeForce thrust(thrustVector);
+        thrust.updateForce(&lander);
+    }
 
-	//	//recheck collision
-	// 	ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-	// 	ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+    lander.integrate();
 
-	// 	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+    // recheck collision
+    ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
+    ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+    Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+    colBoxList.clear();
+    octree.intersect(bounds, octree.root, colBoxList);
 
-	// 	colBoxList.clear();
-	// 	octree.intersect(bounds, octree.root, colBoxList);
-	// }
+    // ALTITUDE AGL DETECTION
+    if(bShowAGL){
+        glm::vec3 landerPos = lander.model.getPosition();  
+        glm::vec3 rayDir = glm::vec3(0, -1, 0);
+        Ray downRay(Vector3(landerPos.x, landerPos.y, landerPos.z), Vector3(rayDir.x, rayDir.y, rayDir.z));
+        TreeNode hitNode; 
+        bool hit = octree.intersect(downRay, octree.root, hitNode);
+        
+        rayStart = landerPos; 
+        rayEnd = landerPos + rayDir * 5000.0f; 
 
-	//rotate clockwise
-	if (rightPressed) {
-		RotationalShapeForce rotation(100);
-		rotation.updateForce(&lander);
-	}
-	//rotate counterclockwise
-	if (leftPressed) {
-		RotationalShapeForce rotation(-100);
-		rotation.updateForce(&lander);
-	}
-	if (upPressed) {
-		//multiply heading vector by the transform matrix to get the heading in the visible plane
-		glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
-		//give the triangle a force in the heading direction
-		ofVec3f thrustVector = ofVec3f(worldHeading.x, 0, worldHeading.z);
-		thrustVector *= 50;
-		ThrustShapeForce thrust(thrustVector);
-		thrust.updateForce(&lander);
-	}
-	if (downPressed) {
-		//multiply heading vector by the transform matrix to get the heading in the visible plane
-		glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
-		//give the triangle a force in the heading direction
-		ofVec3f thrustVector = ofVec3f(-worldHeading.x, 0, -worldHeading.z);
-		thrustVector *= 50;
-		ThrustShapeForce thrust(thrustVector);
-		thrust.updateForce(&lander);
-	}
-	if (shiftPressed) {
-		//multiply heading vector by the transform matrix to get the heading in the visible plane
-		//glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
-		//give the triangle a force in the heading direction
-		ofVec3f thrustVector = ofVec3f(0, 1, 0);
-		thrustVector *= 50;
-		ThrustShapeForce thrust(thrustVector);
-		thrust.updateForce(&lander);
-	}
-	if (ctrlPressed) {
-		//multiply heading vector by the transform matrix to get the heading in the visible plane
-		//glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
-		//give the triangle a force in the heading direction
-		ofVec3f thrustVector = ofVec3f(0, -1, 0);
-		thrustVector *= 50;
-		ThrustShapeForce thrust(thrustVector);
-		thrust.updateForce(&lander);
-	}
+        if(hit && !hitNode.points.empty()){
+            ofVec3f hitPoint = octree.mesh.getVertex(hitNode.points[0]);
+            altitudeAGL = landerPos.y - hitPoint.y;  
+            rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
+            bRayHit = true; 
+        } else {
+            altitudeAGL = -1; 
+            bRayHit = false; 
+        }
+    }
 
-	lander.integrate();
-
-	//recheck collision
-	ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-	ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
-
-	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-
-	colBoxList.clear();
-	octree.intersect(bounds, octree.root, colBoxList);
-
-	//ALTITUDE AGL DETECTION WITH TELEMETRY (REQ #2)
-	if(bShowAGL){
-		glm::vec3 landerPos = lander.model.getPosition();  
-		//setting ray down
-		glm::vec3 rayDir = glm::vec3(0, -1, 0);
-		Ray downRay(
-			Vector3(landerPos.x, landerPos.y, landerPos.z),
-			Vector3(rayDir.x, rayDir.y, rayDir.z)
-		);
-
-		//intersected node
-		TreeNode hitNode; 
-		bool hit = octree.intersect(downRay, octree.root, hitNode);
-		
-		//save ray start and end 
-		rayStart = landerPos; 
-		rayEnd = landerPos + rayDir * 5000.0f; 
-
-		//terrain hit or no ground found
-		if(hit && !hitNode.points.empty()){
-			ofVec3f hitPoint = octree.mesh.getVertex(hitNode.points[0]);
-			altitudeAGL = landerPos.y - hitPoint.y;  
-			rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
-			bRayHit = true; 
-		} else {
-			altitudeAGL = -1; 
-			bRayHit = false; 
-		}
+    // update particle exhaust
+    if (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed) {
+		glm::vec3 landerPos = lander.model.getPosition();
+		glm::vec3 landerDir = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0f)));
+    	exhaustEmitter.position = lander.model.getPosition() - lander.heading * 0.05f; 
+    	exhaustEmitter.update();
+	} else {
+		exhaustEmitter.particles.clear(); 
 	}
 }
+
 //--------------------------------------------------------------
 void ofApp::draw() {
+    ofSetColor(255);
+    backgroundImage.draw(0,0, ofGetWidth(), ofGetHeight());
+    glClear(GL_DEPTH_BUFFER_BIT);
 
-	ofSetColor(255);
-	backgroundImage.draw(0,0, ofGetWidth(), ofGetHeight());
-	//Fixes issues with models not loading in 
-	glClear(GL_DEPTH_BUFFER_BIT);
+    glDepthMask(false);
+    if (!bHide) gui.draw();
+    glDepthMask(true);
 
-	glDepthMask(false);
-	if (!bHide) gui.draw();
-	glDepthMask(true);
+    cam.begin();
+    ofPushMatrix();
+    if (bWireframe) {
+        ofDisableLighting();
+        ofSetColor(ofColor::slateGray);
+        terrain.drawWireframe();
+        if (bLanderLoaded) {
+            lander.model.drawWireframe();
+            if (!bTerrainSelected) drawAxis(lander.model.getPosition());
+        }
+        if (bTerrainSelected) drawAxis(ofVec3f(0, 0, 0));
+    } else {
+        ofEnableLighting();
+        terrain.drawFaces();
+        if (bLanderLoaded) {
+            lander.draw();
+            if (!bTerrainSelected) drawAxis(lander.model.getPosition());
+            if (bDisplayBBoxes) {
+                ofNoFill();
+                ofSetColor(ofColor::white);
+                for (int i = 0; i < lander.model.getNumMeshes(); i++) {
+                    ofPushMatrix();
+                    ofMultMatrix(lander.model.getModelMatrix());
+                    ofRotate(-90, 1, 0, 0);
+                    Octree::drawBox(bboxList[i]);
+                    ofPopMatrix();
+                }
+            }
 
-	//drawing AGL stats (2D, so outside cam)
-	if(bShowAGL){
-		ofSetColor(ofColor::green);
-	
-		if(altitudeAGL >= 0){
-			ofDrawBitmapString("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40);
-		} else {
-			ofDrawBitmapString("AGL: N/A", ofGetWidth() - 200, 40);
-		}
-	}
+            if (bLanderSelected) {
+                ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
+                ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+                Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+                ofSetColor(ofColor::white);
+                ofNoFill();
+                Octree::drawBox(bounds);
 
-	cam.begin();
-	ofPushMatrix();
-	if (bWireframe) {                    // wireframe mode  (include axis)
-		ofDisableLighting();
-		ofSetColor(ofColor::slateGray);
-		terrain.drawWireframe();
-		if (bLanderLoaded) {
-			lander.model.drawWireframe();
-			if (!bTerrainSelected) drawAxis(lander.model.getPosition());
-		}
-		if (bTerrainSelected) drawAxis(ofVec3f(0, 0, 0));
-	}
-	else {
-		ofEnableLighting();              // shaded mode
-		terrain.drawFaces();
-		ofMesh mesh;
-		if (bLanderLoaded) {
-			//lander.model.drawFaces();
-			lander.draw();
-			if (!bTerrainSelected) drawAxis(lander.model.getPosition());
-			if (bDisplayBBoxes) {
-				ofNoFill();
-				ofSetColor(ofColor::white);
-				for (int i = 0; i < lander.model.getNumMeshes(); i++) {
-					ofPushMatrix();
-					ofMultMatrix(lander.model.getModelMatrix());
-					ofRotate(-90, 1, 0, 0);
-					Octree::drawBox(bboxList[i]);
-					ofPopMatrix();
-				}
-			}
-
-			if (bLanderSelected) {
-
-				ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-				ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
-
-				Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-				ofSetColor(ofColor::white);
-				ofNoFill();
-				Octree::drawBox(bounds);
-
-				// draw colliding boxes
-				//
-				ofSetColor(ofColor::lightBlue);
-				for (int i = 0; i < colBoxList.size(); i++) {
-					Octree::drawBox(colBoxList[i]);
-				}
-			}
-		}
-	}
-	if (bTerrainSelected) drawAxis(ofVec3f(0, 0, 0));
-
-
-
-	if (bDisplayPoints) {                // display points as an option    
-		glPointSize(3);
-		ofSetColor(ofColor::green);
-		terrain.drawVertices();
-	}
-
-	// highlight selected point (draw sphere around selected point)
-	//
-	if (bPointSelected) {
-		ofSetColor(ofColor::blue);
-		ofDrawSphere(selectedPoint, .1);
-	}
-
-
-	// recursively draw octree
-	//
-	ofDisableLighting();
-	int level = 0;
-	//	ofNoFill();
-
-	if (bDisplayLeafNodes) {
-		octree.drawLeafNodes(octree.root);
-		// cout << "num leaf: " << octree.numLeaf << endl;
+                ofSetColor(ofColor::lightBlue);
+                for (int i = 0; i < colBoxList.size(); i++) {
+                    Octree::drawBox(colBoxList[i]);
+                }
+            }
+        }
     }
-	else if (bDisplayOctree) {
-		ofNoFill();
-		ofSetColor(ofColor::white);
-		octree.draw(numLevels, 0);
-	}
+    if (bTerrainSelected) drawAxis(ofVec3f(0, 0, 0));
 
-	// if point selected, draw a sphere
-	//
-	if (pointSelected) {
-		ofVec3f p = octree.mesh.getVertex(selectedNode.points[0]);
-		ofVec3f d = p - cam.getPosition();
-		ofSetColor(ofColor::lightGreen);
-		ofDrawSphere(p, .02 * d.length());
-	}
+    if (bDisplayPoints) {
+        glPointSize(3);
+        ofSetColor(ofColor::green);
+        terrain.drawVertices();
+    }
 
-	//AGL 3D Ray Intersection
+    if (bPointSelected) {
+        ofSetColor(ofColor::blue);
+        ofDrawSphere(selectedPoint, .1);
+    }
+
+    ofDisableLighting();
+    if (bDisplayLeafNodes) octree.drawLeafNodes(octree.root);
+    else if (bDisplayOctree) {
+        ofNoFill();
+        ofSetColor(ofColor::white);
+        octree.draw(numLevels, 0);
+    }
+
+    if (pointSelected) {
+        ofVec3f p = octree.mesh.getVertex(selectedNode.points[0]);
+        ofVec3f d = p - cam.getPosition();
+        ofSetColor(ofColor::lightGreen);
+        ofDrawSphere(p, .02 * d.length());
+    }
+
+    // AGL Ray Intersection
+    if(bShowAGL){
+        ofSetColor(ofColor::green);
+        ofSetLineWidth(2.0f); 
+        ofDrawLine(rayStart, rayEnd);
+        if(bRayHit){
+            ofSetColor(ofColor::red);
+            ofDrawSphere(rayEnd, 2.0f);
+        }
+    }
+
+	// draw particle exhaust
+    exhaustEmitter.draw(particleShader, cam);
+
+    ofPopMatrix();
+    cam.end();
+
+	//AGL stats 
 	if(bShowAGL){
     	ofSetColor(ofColor::green);
-    	ofSetLineWidth(2.0f); 
-    	ofDrawLine(rayStart, rayEnd);
-
-    	if(bRayHit){
-        	ofSetColor(ofColor::red);
-        	ofDrawSphere(rayEnd, 2.0f);
+    	if(altitudeAGL >= 0){
+        	ofDrawBitmapString("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40);
+    	} else {
+        	ofDrawBitmapString("AGL: N/A", ofGetWidth() - 200, 40);
     	}
 	}
-
-	ofPopMatrix();
-	cam.end();
 }
 
-
-// 
-// Draw an XYZ axis in RGB at world (0,0,0) for reference.
+//--------------------------------------------------------------
+// Draw an XYZ axis in RGB
 //
 void ofApp::drawAxis(ofVec3f location) {
-
-	ofPushMatrix();
-	ofTranslate(location);
-
-	ofSetLineWidth(1.0);
-
-	// X Axis
-	ofSetColor(ofColor(255, 0, 0));
-	ofDrawLine(ofPoint(0, 0, 0), ofPoint(1, 0, 0));
-	
-
-	// Y Axis
-	ofSetColor(ofColor(0, 255, 0));
-	ofDrawLine(ofPoint(0, 0, 0), ofPoint(0, 1, 0));
-
-	// Z Axis
-	ofSetColor(ofColor(0, 0, 255));
-	ofDrawLine(ofPoint(0, 0, 0), ofPoint(0, 0, 1));
-
-	ofPopMatrix();
+    ofPushMatrix();
+    ofTranslate(location);
+    ofSetLineWidth(1.0);
+    ofSetColor(ofColor(255, 0, 0));
+    ofDrawLine(ofPoint(0, 0, 0), ofPoint(1, 0, 0));
+    ofSetColor(ofColor(0, 255, 0));
+    ofDrawLine(ofPoint(0, 0, 0), ofPoint(0, 1, 0));
+    ofSetColor(ofColor(0, 0, 255));
+    ofDrawLine(ofPoint(0, 0, 0), ofPoint(0, 0, 1));
+    ofPopMatrix();
 }
+
 
 
 void ofApp::keyPressed(int key) {
