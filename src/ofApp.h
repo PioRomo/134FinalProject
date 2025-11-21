@@ -6,6 +6,7 @@
 #include "Octree.h"
 #include "glm/gtx/intersect.hpp"
 #include "Shapes.h"
+#include "Emitter.h"
 
 
 
@@ -94,5 +95,9 @@ class ofApp : public ofBaseApp{
 		glm::vec3 rayStart;
 		glm::vec3 rayEnd;
 		bool bRayHit = false;
+
+		//For lander exhaust
+		Emitter exhaustEmitter;
+		ofShader particleShader;
 
 };
