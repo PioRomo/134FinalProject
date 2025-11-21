@@ -15,6 +15,11 @@ Additionally, we've added a ray from the lander to the ground to help better vis
 > To enable this, simple press the 'G' button to toggle on and off. AGL stats will be on the top right of the
 > window.
 #### Particle Emitting and Rendering
+###### Pio Romo
+One of the more frustrating requirements, we did have previous code to work off of. However, that was for 2D; 3D
+is whole 'nother world. We built a particle system positioned at the thrust (bottom  of the lander) that begins 
+emitting particles when thrust is activated i.e. movement and rotation. Makes for realistic exhaust!   
+> Thrust is activated on movement key press: W, A, S, D, Shift, Ctrl
 #### Collision Detection 
 #### Lighting  
 #### Sound
