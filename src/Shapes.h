@@ -47,24 +47,28 @@ public:
 	}
 	void integrate() {
 		if (ofGetFrameRate() > 0) {
-			glm::vec3 newPosition = model.getPosition();
-			newPosition += velocity * (1 / ofGetFrameRate());
 			// start with any acceleration already on the triangle
 			ofVec3f accel = acceleration;
+			//add gravity to the acceleration
+			accel += ofVec3f(0, -10, 0);
 			accel += forces;
 			velocity += accel * (1 / ofGetFrameRate());
 			velocity *= damping;
+			glm::vec3 newPosition = model.getPosition();
+			newPosition += velocity * (1 / ofGetFrameRate());
 
+			//we use the assimpmodelloader to store the position
 			model.setPosition(newPosition.x, newPosition.y, newPosition.z);
 
-			float newRotation = model.getRotationAngle(0);
-			newRotation += rotationalVelocity * (1 / ofGetFrameRate());
 			//adjust rotation
 			float rotationalAccel = rotationalAcceleration;
 			rotationalAccel += rotationalForce;
 			rotationalVelocity += rotationalAccel * (1 / ofGetFrameRate());
 			rotationalVelocity *= damping;
-			
+			float newRotation = model.getRotationAngle(0);
+			newRotation += rotationalVelocity * (1 / ofGetFrameRate());
+
+			//we use the assimpmodelloader to store the rotation as well
 			model.setRotation(0, newRotation, 0, 1, 0);
 
 			//reset forces

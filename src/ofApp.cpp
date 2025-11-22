@@ -57,8 +57,6 @@ void ofApp::setup(){
 
     // create sliders for testing
     gui.setup();
-    gui.add(numLevels.setup("Number of Octree Levels", 1, 1, 10));
-    gui.add(bTimingInfo.setup("Enable Timing Info", false));
     bHide = false;
 
     //  Create Octree for testing.
@@ -84,27 +82,41 @@ void ofApp::setup(){
 // incrementally update scene (animation)
 //
 void ofApp::update() {
-    // rotate clockwise
-    if (rightPressed) {
-        RotationalShapeForce rotation(100);
-        rotation.updateForce(&lander);
-    }
-    // rotate counterclockwise
-    if (leftPressed) {
-        RotationalShapeForce rotation(-100);
-        rotation.updateForce(&lander);
-    }
-    // forward/backward
-    if (upPressed || downPressed || shiftPressed || ctrlPressed) {
-        glm::vec3 worldHeading = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0)));
-        ofVec3f thrustVector(0,0,0);
-        if(upPressed) thrustVector = ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
-        if(downPressed) thrustVector = ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
-        if(shiftPressed) thrustVector = ofVec3f(0, 1, 0) * 50;
-        if(ctrlPressed) thrustVector = ofVec3f(0, -1, 0) * 50;
-        ThrustShapeForce thrust(thrustVector);
-        thrust.updateForce(&lander);
-    }
+	lander.forces.set(0, 0, 0);
+	// forward/backward
+	//need to get the transform matrix from the ofxAssimpModelLoader
+	glm::mat4 mat = lander.model.getModelMatrix();
+	//we then multiply that matrix by (0,0,-1) which is the forward vector to get the heading
+	glm::vec3 worldHeading = glm::normalize(glm::vec3(mat * glm::vec4(0,0,-1,0)));
+	ofVec3f thrustVector(0, 0, 0);
+	// Horizontal thrust (XZ plane)
+	if (upPressed) {
+		thrustVector += ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
+	}
+	if (downPressed) {
+		thrustVector += ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
+	}
+
+	// Vertical thrust (Y axis)
+	if (shiftPressed) {
+		thrustVector += ofVec3f(0, 1, 0) * 50;
+	}
+	if (ctrlPressed) {
+		thrustVector += ofVec3f(0, -1, 0) * 50;
+	}
+	ThrustShapeForce thrust(thrustVector);
+	thrust.updateForce(&lander);
+
+	// rotate clockwise
+	if (rightPressed) {
+		RotationalShapeForce rotation(-100);
+		rotation.updateForce(&lander);
+	}
+	// rotate counterclockwise
+	if (leftPressed) {
+		RotationalShapeForce rotation(100);
+		rotation.updateForce(&lander);
+	}
 
     lander.integrate();
 
@@ -112,8 +124,67 @@ void ofApp::update() {
     ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
     ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
     Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+	//ofMesh mesh = lander.model.getMesh(0); // assuming 1 mesh
+	//ofMatrix4x4 mat = lander.model.getModelMatrix();
+
+	//ofVec3f minPt(999999, 999999, 999999);
+	//ofVec3f maxPt(-999999, -999999, -999999);
+
+	//for (int i = 0; i < mesh.getNumVertices(); i++) {
+	//	ofVec3f v = mesh.getVertex(i);
+
+	//	// transform vertex into world space
+	//	ofVec3f world = mat.preMult(v);
+
+	//	minPt.x = std::min(minPt.x, world.x);
+	//	minPt.y = std::min(minPt.y, world.y);
+	//	minPt.z = std::min(minPt.z, world.z);
+
+	//	maxPt.x = std::max(maxPt.x, world.x);
+	//	maxPt.y = std::max(maxPt.y, world.y);
+	//	maxPt.z = std::max(maxPt.z, world.z);
+	//}
+
+	//// Now build AABB from transformed min/max
+	//Box bounds(Vector3(minPt.x, minPt.y, minPt.z), Vector3(maxPt.x, maxPt.y, maxPt.z));
     colBoxList.clear();
     octree.intersect(bounds, octree.root, colBoxList);
+
+	//we have a collision
+	if (!colBoxList.empty()) {
+		vector<int> collisionPoints;
+		//find the points of each box
+		for (auto & box : colBoxList) {
+			vector<int> points;
+			octree.getMeshPointsInBox(octree.mesh, octree.root.points, box, points);
+			for (int p : points) {
+				collisionPoints.push_back(p);
+			}
+		}
+		//get the average normal vector of all the points
+		glm::vec3 averageNormal(0, 0, 0);
+		for (auto & index : collisionPoints) {
+			averageNormal += octree.mesh.getNormal(index);
+		}
+		averageNormal = glm::normalize(averageNormal);
+
+		//move lander ouside of terrain if stuck inside
+		glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
+		lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
+
+		//reflect the velocity
+		lander.velocity = glm::reflect(lander.velocity, averageNormal);
+		////if velocity is going into terrain remove it
+		//float vDot = glm::dot(lander.velocity, averageNormal);
+		//if (vDot < 0) {
+		//	lander.velocity -= averageNormal * vDot;
+		//}
+		////if acceleration is going into terrain remove it
+		//float aDot = glm::dot(lander.acceleration, averageNormal);
+		//if (aDot < 0) {
+		//	lander.acceleration -= averageNormal * aDot;
+		//}
+	}
 
     // ALTITUDE AGL DETECTION
     if(bShowAGL){
@@ -140,7 +211,10 @@ void ofApp::update() {
     // update particle exhaust
     if (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed) {
 		glm::vec3 landerPos = lander.model.getPosition();
-		glm::vec3 landerDir = glm::normalize(glm::vec3(lander.getTransform() * glm::vec4(lander.heading, 0.0f)));
+		//need to get the transform matrix from the ofxAssimpModelLoader
+		glm::mat4 mat = lander.model.getModelMatrix();
+		//we then multiply that matrix by (0,0,-1) which is the forward vector to get the heading
+		glm::vec3 landerDir = glm::normalize(glm::vec3(mat * glm::vec4(0, 0, -1, 0)));
     	exhaustEmitter.position = lander.model.getPosition() - lander.heading * 0.05f; 
     	exhaustEmitter.update();
 	} else {
@@ -188,9 +262,32 @@ void ofApp::draw() {
             }
 
             if (bLanderSelected) {
-                ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-                ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
-                Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+				//ofMesh mesh = lander.model.getMesh(0); // assuming 1 mesh
+				//ofMatrix4x4 mat = lander.model.getModelMatrix();
+
+				//ofVec3f minPt(999999, 999999, 999999);
+				//ofVec3f maxPt(-999999, -999999, -999999);
+
+				//for (int i = 0; i < mesh.getNumVertices(); i++) {
+				//	ofVec3f v = mesh.getVertex(i);
+
+				//	// transform vertex into world space
+				//	ofVec3f world = mat.preMult(v);
+
+				//	minPt.x = std::min(minPt.x, world.x);
+				//	minPt.y = std::min(minPt.y, world.y);
+				//	minPt.z = std::min(minPt.z, world.z);
+
+				//	maxPt.x = std::max(maxPt.x, world.x);
+				//	maxPt.y = std::max(maxPt.y, world.y);
+				//	maxPt.z = std::max(maxPt.z, world.z);
+				//}
+
+				//// Now build AABB from transformed min/max
+				//Box bounds(Vector3(minPt.x, minPt.y, minPt.z), Vector3(maxPt.x, maxPt.y, maxPt.z));
+				ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
+				ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+				Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
                 ofSetColor(ofColor::white);
                 ofNoFill();
                 Octree::drawBox(bounds);
@@ -278,6 +375,29 @@ void ofApp::drawAxis(ofVec3f location) {
 
 void ofApp::keyPressed(int key) {
 
+	//lets us handle multiple keys pressed at the same time
+	if (key == 'd' || key == 'D') {
+		rightPressed = true;
+	}
+	if (key == 'a' || key == 'A') {
+		leftPressed = true;
+	}
+	if (key == 'w' || key == 'W') {
+		cout << "w pressed" << endl;
+		upPressed = true;
+	}
+	if (key == 's' || key == 'S') {
+		downPressed = true;
+	}
+	if (key == OF_KEY_CONTROL) {
+		//bCtrlKeyDown = true;
+		ctrlPressed = true;
+	}
+	if (key == OF_KEY_SHIFT) {
+		//bCollision = true;
+		shiftPressed = true;
+	}
+
 	switch (key) {
 	case 'B':
 	case 'b':
@@ -323,30 +443,9 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'V':
 		break;
-	case 'w':
-		//toggleWireframeMode();
-		upPressed = true;
-		break;
-	case 'a':
-		leftPressed = true;
-		break;
-	case 's':
-		downPressed = true;
-		break;
-	case 'd':
-		rightPressed = true;
-		break;
 	case OF_KEY_ALT:
 		cam.enableMouseInput();
 		bAltKeyDown = true;
-		break;
-	case OF_KEY_CONTROL:
-		//bCtrlKeyDown = true;
-		ctrlPressed = true;
-		break;
-	case OF_KEY_SHIFT:
-		//bCollision = true;
-		shiftPressed = true;
 		break;
 	case OF_KEY_DEL:
 		break;
@@ -368,36 +467,36 @@ void ofApp::togglePointsDisplay() {
 }
 
 void ofApp::keyReleased(int key) {
+	//lets us handle multiple keys pressed at the same time
+	if (key == 'd' || key == 'D') {
+		rightPressed = false;
+	}
+	if (key == 'a' || key == 'A') {
+		leftPressed = false;
+	}
+	if (key == 'w' || key == 'W') {
+		cout << "w released" << endl;
+		upPressed = false;
+	}
+	if (key == 's' || key == 'S') {
+		downPressed = false;
+	}
+	if (key == OF_KEY_CONTROL) {
+		//bCtrlKeyDown = true;
+		ctrlPressed = false;
+	}
+	if (key == OF_KEY_SHIFT) {
+		//bCollision = true;
+		shiftPressed = false;
+	}
 
 	switch (key) {
-	
 	case OF_KEY_ALT:
 		cam.disableMouseInput();
 		bAltKeyDown = false;
 		break;
-	case 'w':
-		upPressed = false;
-		break;
-	case 'a':
-		leftPressed = false;
-		break;
-	case 's':
-		downPressed = false;
-		break;
-	case 'd':
-		rightPressed = false;
-		break;
-	case OF_KEY_CONTROL:
-		//bCtrlKeyDown = false;
-		ctrlPressed = false;
-		break;
-	case OF_KEY_SHIFT:
-		//bCollision = false;
-		shiftPressed = false;
-		break;
 	default:
 		break;
-
 	}
 }
 
