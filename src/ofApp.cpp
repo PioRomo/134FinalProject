@@ -61,8 +61,13 @@ void ofApp::setup(){
 
     //  Create Octree for testing.
     float startTime = ofGetElapsedTimeMillis();
-    octree.create(terrain.getMesh(0), 20);
+    // octree.create(terrain.getMesh(0), 20);
     float endTime = ofGetElapsedTimeMillis();
+	for(int i = 0; i<terrain.getNumMeshes(); i++){
+		Octree temp;
+		temp.create(terrain.getMesh(i),20);
+		octrees.push_back(temp);
+	}
     
     cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
     cout << "Time to build the tree (ms): " << endTime - startTime << endl;
@@ -368,7 +373,12 @@ void ofApp::draw() {
     }
 
     ofDisableLighting();
-    if (bDisplayLeafNodes) octree.drawLeafNodes(octree.root);
+    if (bDisplayLeafNodes) {
+		// octree.drawLeafNodes(octree.root);
+		for(int i = 0; i<octrees.size(); i++){
+        	octrees[i].drawLeafNodes(octrees[i].root);
+		}
+	}
     else if (bDisplayOctree) {
         ofNoFill();
         ofSetColor(ofColor::white);
