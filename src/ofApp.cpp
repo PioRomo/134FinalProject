@@ -128,29 +128,7 @@ void ofApp::update() {
     ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
     ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
     Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-	//ofMesh mesh = lander.model.getMesh(0); // assuming 1 mesh
-	//ofMatrix4x4 mat = lander.model.getModelMatrix();
 
-	//ofVec3f minPt(999999, 999999, 999999);
-	//ofVec3f maxPt(-999999, -999999, -999999);
-
-	//for (int i = 0; i < mesh.getNumVertices(); i++) {
-	//	ofVec3f v = mesh.getVertex(i);
-
-	//	// transform vertex into world space
-	//	ofVec3f world = mat.preMult(v);
-
-	//	minPt.x = std::min(minPt.x, world.x);
-	//	minPt.y = std::min(minPt.y, world.y);
-	//	minPt.z = std::min(minPt.z, world.z);
-
-	//	maxPt.x = std::max(maxPt.x, world.x);
-	//	maxPt.y = std::max(maxPt.y, world.y);
-	//	maxPt.z = std::max(maxPt.z, world.z);
-	//}
-
-	//// Now build AABB from transformed min/max
-	//Box bounds(Vector3(minPt.x, minPt.y, minPt.z), Vector3(maxPt.x, maxPt.y, maxPt.z));
 	for(int i = 0; i<octrees.size(); i++){
     	colBoxList.clear();
 		octrees[i].intersect(bounds, octrees[i].root, colBoxList);
@@ -171,26 +149,23 @@ void ofApp::update() {
 				averageNormal += octrees[i].mesh.getNormal(index);
 			}
 			averageNormal = glm::normalize(averageNormal);
-
-			//move lander ouside of terrain if stuck inside
-			glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
-			lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
-
-			//reflect the velocity
-			//lander.velocity = glm::reflect(lander.velocity, averageNormal);
-			////if velocity is going into terrain remove it
-			//float vDot = glm::dot(lander.velocity, averageNormal);
-			//if (vDot < 0) {
-			//	lander.velocity -= averageNormal * vDot;
-			//}
-			////if acceleration is going into terrain remove it
-			//float aDot = glm::dot(lander.acceleration, averageNormal);
-			//if (aDot < 0) {
-			//	lander.acceleration -= averageNormal * aDot;
-			//}
-			glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
-			ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
-			thrust.updateForce(&lander);
+			
+			if(glm::length(lander.velocity)>10){
+				// cout << "game over" << endl;
+				// glm::vec3 thrustVector = 100000 * averageNormal;
+				// ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+				// thrust.updateForce(&lander);
+				// break;
+			}
+			else{
+				//move lander ouside of terrain if stuck inside
+				glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
+				lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
+				//impulse force equation
+				glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
+				ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+				thrust.updateForce(&lander);
+			}
 		}
 	}
 
@@ -202,20 +177,26 @@ void ofApp::update() {
         glm::vec3 rayDir = glm::vec3(0, -1, 0);
         Ray downRay(Vector3(landerPos.x, landerPos.y, landerPos.z), Vector3(rayDir.x, rayDir.y, rayDir.z));
         TreeNode hitNode; 
-        bool hit = octree.intersect(downRay, octree.root, hitNode);
-        
-        rayStart = landerPos; 
-        rayEnd = landerPos + rayDir * 5000.0f; 
+		bRayHit = false;
+		altitudeAGL = 1000000000;
+		for(int i = 0; i<octrees.size(); i++){
+			bool hit = octrees[i].intersect(downRay, octrees[i].root, hitNode);
+			
+			rayStart = landerPos; 
+			rayEnd = landerPos + rayDir * 5000.0f; 
 
-        if(hit && !hitNode.points.empty()){
-            ofVec3f hitPoint = octree.mesh.getVertex(hitNode.points[0]);
-            altitudeAGL = landerPos.y - hitPoint.y;  
-            rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
-            bRayHit = true; 
-        } else {
-            altitudeAGL = -1; 
-            bRayHit = false; 
-        }
+			if(hit && !hitNode.points.empty()){
+				ofVec3f hitPoint = octrees[i].mesh.getVertex(hitNode.points[0]);
+				if(altitudeAGL > landerPos.y - hitPoint.y){
+					altitudeAGL = landerPos.y - hitPoint.y;  
+					rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
+					bRayHit = true; 
+				}
+			}
+		}
+		if(!bRayHit){
+			altitudeAGL = -1;
+		}
     }
 
     // update particle exhaust
@@ -333,7 +314,10 @@ void ofApp::draw() {
     else if (bDisplayOctree) {
         ofNoFill();
         ofSetColor(ofColor::white);
-        octree.draw(numLevels, 0);
+        // octree.draw(numLevels, 0);
+		for(int i = 0; i<octrees.size(); i++){
+        	octrees[i].draw(5, 0);
+		}
     }
 
     if (pointSelected) {
