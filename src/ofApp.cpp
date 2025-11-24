@@ -63,11 +63,6 @@ void ofApp::setup(){
     float startTime = ofGetElapsedTimeMillis();
     octree.create(terrain.getMesh(0), 20);
     float endTime = ofGetElapsedTimeMillis();
-	for(int i = 0; i<terrain.getMeshCount(); i++){
-		Octree temp;
-		temp.create(terrain.getMesh(i),20);
-		octrees.push_back(temp);
-	}
     
     cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
     cout << "Time to build the tree (ms): " << endTime - startTime << endl;
@@ -81,6 +76,51 @@ void ofApp::setup(){
     exhaustEmitter.rate = 100;
     exhaustEmitter.velocity = glm::vec3(0, -5, 0);
     exhaustEmitter.oneShot = false;
+
+	//setup sounds
+	thrustSound.load("sounds/thrustSound_edited.wav");       
+	thrustSound.setLoop(true);  
+	thrustSound.setVolume(0.75);                 
+
+	backgroundMusic.load("sounds/backgroundMusic.mp3");  
+	backgroundMusic.setLoop(true);
+	backgroundMusic.play();
+	backgroundMusic.setVolume(0.3);
+
+	//Setting up lights
+	// KEY LIGHT
+	keyLight.setup();
+	keyLight.enable();
+	keyLight.setPosition(5, 5, 5);
+	keyLight.lookAt(glm::vec3(0,0,0));
+	keyLight.setDiffuseColor(ofFloatColor(1,1,1));
+	keyLight.setSpecularColor(ofFloatColor(1,1,1));
+	keyLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	// FILL LIGHT
+	fillLight.setup();
+	fillLight.enable();
+	fillLight.setPosition(-5, 5, 5);
+	fillLight.lookAt(glm::vec3(0,0,0));
+	fillLight.setDiffuseColor(ofFloatColor(1,1,1));
+	fillLight.setSpecularColor(ofFloatColor(1,1,1));
+	fillLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	// RIM LIGHT
+	rimLight.setup();
+	rimLight.enable();
+	rimLight.setPosition(0, 5, -7);
+	rimLight.lookAt(glm::vec3(0,0,0));
+	rimLight.setDiffuseColor(ofFloatColor(1,1,1));
+	rimLight.setSpecularColor(ofFloatColor(1,1,1));
+	rimLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	// SHIP LIGHT
+	shipLight.setup();
+	shipLight.setSpotlight();
+	shipLight.setDiffuseColor(ofFloatColor(1,1,1));
+	shipLight.setSpecularColor(ofFloatColor(1,1,1));
+	shipLight.setAmbientColor(ofFloatColor(0.0,0.0,0.0));
+	shipLight.setSpotlightCutOff(25);
+	shipLight.setAttenuation(1.0, 0.01, 0.001);
+
 }
 
 //--------------------------------------------------------------
@@ -122,6 +162,21 @@ void ofApp::update() {
 		RotationalShapeForce rotation(100);
 		rotation.updateForce(&lander);
 	}
+	
+	//Updating sounds
+	if(thrustVector.length() > 0 || rightPressed || leftPressed){
+		if (!thrustPlaying) {
+        	thrustSound.play();
+        	thrustPlaying = true;
+   		}
+	} else {
+    	if (thrustPlaying) {
+        	thrustSound.stop();
+        	thrustPlaying = false;
+    	}
+	}
+
+	
 
 
     // recheck collision
@@ -210,6 +265,15 @@ void ofApp::update() {
     	exhaustEmitter.update();
 	} else {
 		exhaustEmitter.particles.clear(); 
+	}
+
+	//toggle ship light
+	if (bShipLightOn) {
+    	shipLight.setPosition(lander.model.getPosition() + glm::vec3(0,1,0)); 
+    	shipLight.lookAt(lander.model.getPosition() + lander.heading * 2.0f);
+    	shipLight.enable();
+	} else {
+    	shipLight.disable();
 	}
 }
 
@@ -304,13 +368,7 @@ void ofApp::draw() {
     }
 
     ofDisableLighting();
-    if (bDisplayLeafNodes){ 
-		// octree.drawLeafNodes(octree.root);
-		
-		for(int i = 0; i<octrees.size(); i++){
-        	octrees[i].drawLeafNodes(octrees[i].root);
-		}
-	}
+    if (bDisplayLeafNodes) octree.drawLeafNodes(octree.root);
     else if (bDisplayOctree) {
         ofNoFill();
         ofSetColor(ofColor::white);
@@ -426,6 +484,10 @@ void ofApp::keyPressed(int key) {
 	case 'o':
 		bDisplayOctree = !bDisplayOctree;
 		break;
+	case 'P':  
+	case 'p':
+    	bShipLightOn = !bShipLightOn;
+    	break;	
 	case 'r':
 		cam.reset();
 		break;
