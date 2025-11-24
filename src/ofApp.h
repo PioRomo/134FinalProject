@@ -7,6 +7,7 @@
 #include "glm/gtx/intersect.hpp"
 #include "Shapes.h"
 #include "Emitter.h"
+#include "ofSoundPlayer.h"
 
 
 
@@ -49,7 +50,6 @@ class ofApp : public ofBaseApp{
 		vector<Box> colBoxList;
 		bool bLanderSelected = false;
 		Octree octree;
-		vector<Octree> octrees;
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
 		bool bInDrag = false;
@@ -100,5 +100,14 @@ class ofApp : public ofBaseApp{
 		//For lander exhaust
 		Emitter exhaustEmitter;
 		ofShader particleShader;
+
+		//Sounds
+		ofSoundPlayer thrustSound;    
+		ofSoundPlayer backgroundMusic;  
+		bool thrustPlaying = false;
+
+		//Lights  
+		ofLight keyLight, fillLight, rimLight, shipLight; 
+		bool bShipLightOn; 
 
 };
