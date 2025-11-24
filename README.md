@@ -25,8 +25,13 @@ emitting particles when thrust is activated i.e. movement and rotation. Makes fo
 We have implemented full AABB collision with octrees. All contact between the terrain and the lander are handled.
 Collision resolution was also implemented with a reflective impulse force when the lander comes in contact with the terrain.
 #### Camera
-#### Lighting  
+#### Lighting 
+###### Pio Romo
+Lighting was added to our scene. Very simple implementation taken from the monsterLight code. Additionally, a ship light was 
+added. 
+> Ship light can be toggled on and off with the 'P' key
 #### Sound
+Sounds were added: thrusting, background and explosions. 
 #### Dragging the Lander
 #### 2D Background Image
 ###### Pio Romo
