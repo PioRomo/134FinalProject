@@ -49,6 +49,7 @@ class ofApp : public ofBaseApp{
 		vector<Box> colBoxList;
 		bool bLanderSelected = false;
 		Octree octree;
+		vector<Octree> octrees;
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
 		bool bInDrag = false;
