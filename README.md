@@ -21,6 +21,9 @@ is whole 'nother world. We built a particle system positioned at the thrust (bot
 emitting particles when thrust is activated i.e. movement and rotation. Makes for realistic exhaust!   
 > Thrust is activated on movement key press: W, A, S, D, Shift, Ctrl
 #### Collision Detection 
+##### Schuyler Ng
+We have implemented full AABB collision with octrees. All contact between the terrain and the lander are handled.
+Collision resolution was also implemented with a reflective impulse force when the lander comes in contact with the terrain.
 #### Camera
 #### Lighting  
 #### Sound
