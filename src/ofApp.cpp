@@ -118,7 +118,6 @@ void ofApp::update() {
 		rotation.updateForce(&lander);
 	}
 
-    lander.integrate();
 
     // recheck collision
     ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
@@ -173,7 +172,7 @@ void ofApp::update() {
 		lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
 
 		//reflect the velocity
-		lander.velocity = glm::reflect(lander.velocity, averageNormal);
+		//lander.velocity = glm::reflect(lander.velocity, averageNormal);
 		////if velocity is going into terrain remove it
 		//float vDot = glm::dot(lander.velocity, averageNormal);
 		//if (vDot < 0) {
@@ -184,7 +183,12 @@ void ofApp::update() {
 		//if (aDot < 0) {
 		//	lander.acceleration -= averageNormal * aDot;
 		//}
+		glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
+		ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+		thrust.updateForce(&lander);
 	}
+
+    lander.integrate();
 
     // ALTITUDE AGL DETECTION
     if(bShowAGL){
@@ -383,7 +387,6 @@ void ofApp::keyPressed(int key) {
 		leftPressed = true;
 	}
 	if (key == 'w' || key == 'W') {
-		cout << "w pressed" << endl;
 		upPressed = true;
 	}
 	if (key == 's' || key == 'S') {
@@ -475,7 +478,6 @@ void ofApp::keyReleased(int key) {
 		leftPressed = false;
 	}
 	if (key == 'w' || key == 'W') {
-		cout << "w released" << endl;
 		upPressed = false;
 	}
 	if (key == 's' || key == 'S') {

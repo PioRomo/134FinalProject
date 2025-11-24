@@ -21,6 +21,7 @@ is whole 'nother world. We built a particle system positioned at the thrust (bot
 emitting particles when thrust is activated i.e. movement and rotation. Makes for realistic exhaust!   
 > Thrust is activated on movement key press: W, A, S, D, Shift, Ctrl
 #### Collision Detection 
+#### Camera
 #### Lighting  
 #### Sound
 #### Dragging the Lander
