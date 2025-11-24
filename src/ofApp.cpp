@@ -63,6 +63,11 @@ void ofApp::setup(){
     float startTime = ofGetElapsedTimeMillis();
     octree.create(terrain.getMesh(0), 20);
     float endTime = ofGetElapsedTimeMillis();
+	for(int i = 0; i<terrain.getMeshCount(); i++){
+		Octree temp;
+		temp.create(terrain.getMesh(i),20);
+		octrees.push_back(temp);
+	}
     
     cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
     cout << "Time to build the tree (ms): " << endTime - startTime << endl;
@@ -146,46 +151,47 @@ void ofApp::update() {
 
 	//// Now build AABB from transformed min/max
 	//Box bounds(Vector3(minPt.x, minPt.y, minPt.z), Vector3(maxPt.x, maxPt.y, maxPt.z));
-    colBoxList.clear();
-    octree.intersect(bounds, octree.root, colBoxList);
-
-	//we have a collision
-	if (!colBoxList.empty()) {
-		vector<int> collisionPoints;
-		//find the points of each box
-		for (auto & box : colBoxList) {
-			vector<int> points;
-			octree.getMeshPointsInBox(octree.mesh, octree.root.points, box, points);
-			for (int p : points) {
-				collisionPoints.push_back(p);
+	for(int i = 0; i<octrees.size(); i++){
+    	colBoxList.clear();
+		octrees[i].intersect(bounds, octrees[i].root, colBoxList);
+		//we have a collision
+		if (!colBoxList.empty()) {
+			vector<int> collisionPoints;
+			//find the points of each box
+			for (auto & box : colBoxList) {
+				vector<int> points;
+				octrees[i].getMeshPointsInBox(octrees[i].mesh, octrees[i].root.points, box, points);
+				for (int p : points) {
+					collisionPoints.push_back(p);
+				}
 			}
-		}
-		//get the average normal vector of all the points
-		glm::vec3 averageNormal(0, 0, 0);
-		for (auto & index : collisionPoints) {
-			averageNormal += octree.mesh.getNormal(index);
-		}
-		averageNormal = glm::normalize(averageNormal);
+			//get the average normal vector of all the points
+			glm::vec3 averageNormal(0, 0, 0);
+			for (auto & index : collisionPoints) {
+				averageNormal += octrees[i].mesh.getNormal(index);
+			}
+			averageNormal = glm::normalize(averageNormal);
 
-		//move lander ouside of terrain if stuck inside
-		glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
-		lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
+			//move lander ouside of terrain if stuck inside
+			glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
+			lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
 
-		//reflect the velocity
-		//lander.velocity = glm::reflect(lander.velocity, averageNormal);
-		////if velocity is going into terrain remove it
-		//float vDot = glm::dot(lander.velocity, averageNormal);
-		//if (vDot < 0) {
-		//	lander.velocity -= averageNormal * vDot;
-		//}
-		////if acceleration is going into terrain remove it
-		//float aDot = glm::dot(lander.acceleration, averageNormal);
-		//if (aDot < 0) {
-		//	lander.acceleration -= averageNormal * aDot;
-		//}
-		glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
-		ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
-		thrust.updateForce(&lander);
+			//reflect the velocity
+			//lander.velocity = glm::reflect(lander.velocity, averageNormal);
+			////if velocity is going into terrain remove it
+			//float vDot = glm::dot(lander.velocity, averageNormal);
+			//if (vDot < 0) {
+			//	lander.velocity -= averageNormal * vDot;
+			//}
+			////if acceleration is going into terrain remove it
+			//float aDot = glm::dot(lander.acceleration, averageNormal);
+			//if (aDot < 0) {
+			//	lander.acceleration -= averageNormal * aDot;
+			//}
+			glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
+			ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+			thrust.updateForce(&lander);
+		}
 	}
 
     lander.integrate();
@@ -317,7 +323,13 @@ void ofApp::draw() {
     }
 
     ofDisableLighting();
-    if (bDisplayLeafNodes) octree.drawLeafNodes(octree.root);
+    if (bDisplayLeafNodes){ 
+		// octree.drawLeafNodes(octree.root);
+		
+		for(int i = 0; i<octrees.size(); i++){
+        	octrees[i].drawLeafNodes(octrees[i].root);
+		}
+	}
     else if (bDisplayOctree) {
         ofNoFill();
         ofSetColor(ofColor::white);
