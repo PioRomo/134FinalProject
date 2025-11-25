@@ -24,7 +24,7 @@ void ofApp::setup(){
     bLanderLoaded = false;
     bTerrainSelected = true;
 
-    cam.setDistance(10);
+    cam.setDistance(20);
     cam.setNearClip(.1);
     cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
     ofSetVerticalSync(true);
@@ -40,11 +40,10 @@ void ofApp::setup(){
 
     backgroundImage.load("geo/starfield.jpg");
 
-    terrain.loadModel("geo/134FinalScene.obj");
+    terrain.loadModel("geo/134final_v12.obj");
     terrain.setScaleNormalization(false);
 
-    lander.position = glm::vec3(0, 0, 0);
-    lander.model.setPosition(0, 0, 0);
+    lander.model.setPosition(0, 40, 0);
     lander.model.loadModel("geo/134Final_lander.obj");
     bLanderLoaded = true;
     lander.model.setScaleNormalization(false);
@@ -62,12 +61,12 @@ void ofApp::setup(){
     //  Create Octree for testing.
     float startTime = ofGetElapsedTimeMillis();
     // octree.create(terrain.getMesh(0), 20);
-    float endTime = ofGetElapsedTimeMillis();
 	for(int i = 0; i<terrain.getNumMeshes(); i++){
 		Octree temp;
 		temp.create(terrain.getMesh(i),20);
 		octrees.push_back(temp);
 	}
+	float endTime = ofGetElapsedTimeMillis();
     
     cout << "Number of Verts: " << terrain.getMesh(0).getNumVertices() << endl;
     cout << "Time to build the tree (ms): " << endTime - startTime << endl;
@@ -81,6 +80,13 @@ void ofApp::setup(){
     exhaustEmitter.rate = 100;
     exhaustEmitter.velocity = glm::vec3(0, -5, 0);
     exhaustEmitter.oneShot = false;
+
+	// setup explosion emitter
+	explosionShader.load("explosionParticle.vert", "explosionParticle.frag");
+	explosionEmitter.position = landerPos;
+	explosionEmitter.rate = 100;
+	explosionEmitter.velocity = glm::vec3(0, -1, 0);
+	explosionEmitter.oneShot = true;
 
 	//setup sounds
 	thrustSound.load("sounds/thrustSound_edited.wav");       
@@ -210,12 +216,13 @@ void ofApp::update() {
 			}
 			averageNormal = glm::normalize(averageNormal);
 			
-			if(glm::length(lander.velocity)>10000000000000){
-				// cout << "game over" << endl;
-				// glm::vec3 thrustVector = 100000 * averageNormal;
-				// ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
-				// thrust.updateForce(&lander);
-				// break;
+			if(glm::length(lander.velocity)>20){
+				 cout << "game over" << endl;
+				 glm::vec3 thrustVector = 100000 * averageNormal;
+				 ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+				 thrust.updateForce(&lander);
+				 gameover = true;
+				 break;
 			}
 			else{
 				//move lander ouside of terrain if stuck inside
@@ -269,6 +276,8 @@ void ofApp::update() {
 		glm::vec3 landerDir = glm::normalize(glm::vec3(mat * glm::vec4(0, 0, -1, 0)));
     	exhaustEmitter.position = lander.model.getPosition() - lander.heading * 0.05f; 
     	exhaustEmitter.update();
+		explosionEmitter.position = lander.model.getPosition();
+		explosionEmitter.update();
 	} else {
 		exhaustEmitter.particles.clear(); 
 	}
@@ -386,6 +395,10 @@ void ofApp::draw() {
 
 	// draw particle exhaust
     exhaustEmitter.draw(particleShader, cam);
+
+	if (gameover) {
+		explosionEmitter.draw(explosionShader, cam);
+	}
 
     ofPopMatrix();
     cam.end();

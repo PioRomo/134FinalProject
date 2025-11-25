@@ -60,6 +60,8 @@ class ofApp : public ofBaseApp{
 		ofxIntSlider numLevels;
 		ofxPanel gui;
 
+		bool gameover = false;
+
 		bool bAltKeyDown;
 		bool bCtrlKeyDown;
 		bool bWireframe;
@@ -101,6 +103,10 @@ class ofApp : public ofBaseApp{
 		//For lander exhaust
 		Emitter exhaustEmitter;
 		ofShader particleShader;
+
+		//Explosion emitter
+		Emitter explosionEmitter;
+		ofShader explosionShader;
 
 		//Sounds
 		ofSoundPlayer thrustSound;    
