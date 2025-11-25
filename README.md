@@ -28,10 +28,11 @@ Collision resolution was also implemented with a reflective impulse force when t
 Upon colliding with terrain too quickly, the lander will explode with a shader explosion.
 #### Camera
 ##### Schuyler Ng
-We have 3 cameras implemented
-> Pressing "1" uses the ofEasyCam which allows the user to manually move the camera around as they would like.
+We have 4 cameras implemented
+> Pressing "1" uses a third person camera that follows the lander.
 > Pressing "2" uses the chase camera which sits above the terrain and automatically tracks and zooms on the lander.
 > Pressing "3" uses the down camera which stays attached to the lander and faces straight down.
+> Pressing "4" uses the ofEasyCam which allows the user to manually move the camera around as they would like.
 #### Lighting 
 ###### Pio Romo
 Lighting was added to our scene. Very simple implementation taken from the monsterLight code. Additionally, a ship light was 
