@@ -44,9 +44,13 @@ void ofApp::setup(){
 
     terrain.loadModel("geo/134final_v12.obj");
     terrain.setScaleNormalization(false);
+	//terrain.setPosition(0, -30, 0);
+	//terrain.setRotation(0, 180, 0, 1, 0);  
 
-    lander.model.setPosition(0, 40, 0);
+    
     lander.model.loadModel("geo/134Final_lander.obj");
+	lander.model.setPosition(0, 40, 0);
+	//lander.model.setRotation(0, 180, 0, 1, 0);
     bLanderLoaded = true;
     lander.model.setScaleNormalization(false);
 
@@ -91,7 +95,7 @@ void ofApp::setup(){
 	explosionEmitter.oneShot = false;
 
 	//setup sounds
-	thrustSound.load("sounds/thrustSound_edited.wav");       
+	thrustSound.load("sounds/thrustSound_v2.mp3");       
 	thrustSound.setLoop(true);  
 	thrustSound.setVolume(0.75);                 
 
@@ -100,31 +104,41 @@ void ofApp::setup(){
 	backgroundMusic.play();
 	backgroundMusic.setVolume(0.3);
 
+	explosionSound.load("sounds/explosionSound.wav"); 
+	explosionSound.setLoop(false); 
+
 	//Setting up lights
+	ofSetGlobalAmbientColor(ofFloatColor(0.25, 0.25, 0.25, 1.0));
 	// KEY LIGHT
 	keyLight.setup();
 	keyLight.enable();
-	keyLight.setPosition(5, 5, 5);
-	keyLight.lookAt(glm::vec3(0,0,0));
-	keyLight.setDiffuseColor(ofFloatColor(1,1,1));
-	keyLight.setSpecularColor(ofFloatColor(1,1,1));
-	keyLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	keyLight.setPointLight();
+	keyLight.setPosition(40, 60, 40);
+	keyLight.setDiffuseColor(ofFloatColor(1.0, 1.0, 1.0));      // normal brightness
+	keyLight.setSpecularColor(ofFloatColor(1.0, 1.0, 1.0));
+	keyLight.setAmbientColor(ofFloatColor(0.25, 0.25, 0.25));
+	keyLight.setAttenuation(0.2, 0.002, 0.0);
 	// FILL LIGHT
 	fillLight.setup();
 	fillLight.enable();
-	fillLight.setPosition(-5, 5, 5);
-	fillLight.lookAt(glm::vec3(0,0,0));
-	fillLight.setDiffuseColor(ofFloatColor(1,1,1));
-	fillLight.setSpecularColor(ofFloatColor(1,1,1));
-	fillLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	fillLight.setPointLight();
+	fillLight.setPosition(-50, 35, 45);
+	fillLight.setDiffuseColor(ofFloatColor(0.6, 0.6, 0.6));
+	fillLight.setSpecularColor(ofFloatColor(0.4, 0.4, 0.4));
+	fillLight.setAmbientColor(ofFloatColor(0.15, 0.15, 0.15));
+	fillLight.setAttenuation(0.2, 0.002, 0.0);
+
 	// RIM LIGHT
 	rimLight.setup();
 	rimLight.enable();
-	rimLight.setPosition(0, 5, -7);
-	rimLight.lookAt(glm::vec3(0,0,0));
-	rimLight.setDiffuseColor(ofFloatColor(1,1,1));
-	rimLight.setSpecularColor(ofFloatColor(1,1,1));
-	rimLight.setAmbientColor(ofFloatColor(0.1,0.1,0.1));
+	rimLight.setPointLight();
+	rimLight.setPosition(0, 70, -70);
+	rimLight.setDiffuseColor(ofFloatColor(0.8, 0.8, 0.8));
+	rimLight.setSpecularColor(ofFloatColor(0.6, 0.6, 0.6));
+	rimLight.setAmbientColor(ofFloatColor(0.1, 0.1, 0.1));
+	rimLight.setAttenuation(0.2, 0.002, 0.0);
+
+
 	// SHIP LIGHT
 	shipLight.setup();
 	shipLight.setSpotlight();
@@ -133,6 +147,7 @@ void ofApp::setup(){
 	shipLight.setAmbientColor(ofFloatColor(0.0,0.0,0.0));
 	shipLight.setSpotlightCutOff(25);
 	shipLight.setAttenuation(1.0, 0.01, 0.001);
+
 
 	//chase cam sits in the middle above everything
 	chaseCam.setNearClip(0.1);
@@ -203,8 +218,6 @@ void ofApp::update() {
 	}
 
 	
-
-
     // recheck collision
     ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
     ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
@@ -232,11 +245,13 @@ void ofApp::update() {
 			averageNormal = glm::normalize(averageNormal);
 			
 			if(glm::length(lander.velocity)>20){
-				 cout << "game over" << endl;
+				 cout << "game over due to collision check" << endl;
 				 glm::vec3 thrustVector = 100000 * averageNormal;
 				 ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
 				 thrust.updateForce(&lander);
+				 explosionSound.play(); 
 				 gameover = true;
+				
 				 break;
 			}
 			else{
