@@ -117,6 +117,7 @@ class ofApp : public ofBaseApp{
 		ofSoundPlayer thrustSound;    
 		ofSoundPlayer backgroundMusic;  
 		bool thrustPlaying = false;
+		ofSoundPlayer explosionSound; 
 
 		//Lights  
 		ofLight keyLight, fillLight, rimLight, shipLight; 
