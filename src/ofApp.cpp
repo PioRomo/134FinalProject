@@ -189,8 +189,8 @@ void ofApp::update() {
     ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
     Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
+    colBoxList.clear();
 	for(int i = 0; i<octrees.size(); i++){
-    	colBoxList.clear();
 		octrees[i].intersect(bounds, octrees[i].root, colBoxList);
 		//we have a collision
 		if (!colBoxList.empty()) {
@@ -210,7 +210,7 @@ void ofApp::update() {
 			}
 			averageNormal = glm::normalize(averageNormal);
 			
-			if(glm::length(lander.velocity)>10){
+			if(glm::length(lander.velocity)>10000000000000){
 				// cout << "game over" << endl;
 				// glm::vec3 thrustVector = 100000 * averageNormal;
 				// ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
@@ -225,6 +225,7 @@ void ofApp::update() {
 				glm::vec3 thrustVector = (1.00000001) * glm::dot(-lander.velocity,averageNormal) * averageNormal * ofGetFrameRate()*2;
 				ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
 				thrust.updateForce(&lander);
+				break;
 			}
 		}
 	}
@@ -240,13 +241,13 @@ void ofApp::update() {
 		bRayHit = false;
 		altitudeAGL = 1000000000;
 		for(int i = 0; i<octrees.size(); i++){
-			bool hit = octrees[i].intersect(downRay, octrees[i].root, hitNode);
+			TreeNode* hit = octrees[i].intersect(downRay, octrees[i].root, hitNode);
 			
 			rayStart = landerPos; 
 			rayEnd = landerPos + rayDir * 5000.0f; 
 
-			if(hit && !hitNode.points.empty()){
-				ofVec3f hitPoint = octrees[i].mesh.getVertex(hitNode.points[0]);
+			if(hit != nullptr && !hit->points.empty()){
+				ofVec3f hitPoint = octrees[i].mesh.getVertex(hit->points[0]);
 				if(altitudeAGL > landerPos.y - hitPoint.y){
 					altitudeAGL = landerPos.y - hitPoint.y;  
 					rayEnd = glm::vec3(hitPoint.x, hitPoint.y, hitPoint.z);
@@ -322,29 +323,6 @@ void ofApp::draw() {
             }
 
             if (bLanderSelected) {
-				//ofMesh mesh = lander.model.getMesh(0); // assuming 1 mesh
-				//ofMatrix4x4 mat = lander.model.getModelMatrix();
-
-				//ofVec3f minPt(999999, 999999, 999999);
-				//ofVec3f maxPt(-999999, -999999, -999999);
-
-				//for (int i = 0; i < mesh.getNumVertices(); i++) {
-				//	ofVec3f v = mesh.getVertex(i);
-
-				//	// transform vertex into world space
-				//	ofVec3f world = mat.preMult(v);
-
-				//	minPt.x = std::min(minPt.x, world.x);
-				//	minPt.y = std::min(minPt.y, world.y);
-				//	minPt.z = std::min(minPt.z, world.z);
-
-				//	maxPt.x = std::max(maxPt.x, world.x);
-				//	maxPt.y = std::max(maxPt.y, world.y);
-				//	maxPt.z = std::max(maxPt.z, world.z);
-				//}
-
-				//// Now build AABB from transformed min/max
-				//Box bounds(Vector3(minPt.x, minPt.y, minPt.z), Vector3(maxPt.x, maxPt.y, maxPt.z));
 				ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
 				ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
 				Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
@@ -634,7 +612,7 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 	pointSelected = octree.intersect(ray, octree.root, selectedNode);
 	//cout << "Returned node with " << selectedNode.points.size() << " points" << endl;
 	//cout << "Returned has " << selectedNode.children.size() << " children" << endl;
-	if (pointSelected) {
+	if (pointSelected != nullptr) {
 		pointRet = octree.mesh.getVertex(selectedNode.points[0]);
 	}
 	return pointSelected;

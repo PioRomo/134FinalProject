@@ -66,7 +66,7 @@ class ofApp : public ofBaseApp{
 		bool bDisplayPoints;
 		bool bPointSelected;
 		bool bHide;
-		bool pointSelected = false;
+		TreeNode* pointSelected = nullptr;
 		bool bDisplayLeafNodes = false;
 		bool bDisplayOctree = false;
 		bool bDisplayBBoxes = false;

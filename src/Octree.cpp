@@ -204,7 +204,7 @@ void Octree::subdivide(const ofMesh & mesh, TreeNode & node, int numLevels, int 
 // Implement functions below for Homework project
 //
 
-bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn) {
+TreeNode* Octree::intersect(const Ray &ray, TreeNode &node, TreeNode &nodeRtn) {
 	if (node.box.intersect(ray, 0, 10000)) {
 		//cout << "Hit parent node with " << node.points.size() << " points" << endl;
 		//cout << "Parent has " << node.children.size() << " children" << endl;
@@ -213,19 +213,33 @@ bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn
 		if (node.points.size()==1) {
 			//cout << "Hit LEAF node with " << node.points.size() << " points" << endl;
 			nodeRtn = node;
-			return true;
+			return &node;
 		}
-
+		//store the closest box to be returned
+		TreeNode* lastNode = nullptr;
 		// Recurse into children
 		for (auto & child : node.children) {
-			if (intersect(ray, child, nodeRtn)) {
-				// stop at first child that hits
-				return true; 
+			TreeNode* curr = intersect(ray, child, nodeRtn);
+			//we have an intersection
+			if(lastNode == nullptr){
+				lastNode = curr;
+			}
+			else if (curr != nullptr) {
+				ofVec3f rayOrigin(ray.origin.x(),ray.origin.y(),ray.origin.z());
+				ofVec3f newPoint = mesh.getVertex(curr->points[0]);
+				ofVec3f oldPoint = mesh.getVertex(lastNode->points[0]);
+				if(rayOrigin.distance(newPoint)<rayOrigin.distance(oldPoint)){
+					lastNode = curr;
+				}
 			}
 		}
+		if (lastNode != nullptr) {
+        nodeRtn = *lastNode;
+    	}
+		return lastNode;
 	}
 	// no intersection found
-	return false; 
+	return nullptr;
 }
 
 bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn) {
