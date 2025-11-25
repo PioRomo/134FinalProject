@@ -42,6 +42,11 @@ class ofApp : public ofBaseApp{
 		glm::vec3 getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
 
 		ofEasyCam cam;
+		ofCamera chaseCam;
+		ofCamera downCam;
+		bool useChase = false;
+		bool useDown = false;
+
 		ofxAssimpModelLoader terrain;
 		Vehicle lander;
 		ofLight light;

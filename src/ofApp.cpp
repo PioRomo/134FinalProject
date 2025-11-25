@@ -25,6 +25,7 @@ void ofApp::setup(){
     bLanderLoaded = false;
     bTerrainSelected = true;
 
+
     cam.setDistance(20);
     cam.setNearClip(.1);
     cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
@@ -133,6 +134,19 @@ void ofApp::setup(){
 	shipLight.setSpotlightCutOff(25);
 	shipLight.setAttenuation(1.0, 0.01, 0.001);
 
+	//chase cam sits in the middle above everything
+	chaseCam.setNearClip(0.1);
+	chaseCam.setFarClip(5000);
+	chaseCam.setPosition(glm::vec3(0,200,0));
+	//always looks at the lander
+	chaseCam.lookAt(lander.model.getPosition());
+
+	downCam.setNearClip(0.1);
+	downCam.setFarClip(5000);
+	//set it slightly below the model to not be obstructed
+	downCam.setPosition(lander.model.getPosition() - glm::vec3(1,1,0));
+	//always looks directly down
+	downCam.lookAt(lander.model.getPosition() + glm::vec3(0,-1,0) * 10.0f);
 }
 
 //--------------------------------------------------------------
@@ -291,6 +305,21 @@ void ofApp::update() {
 	} else {
     	shipLight.disable();
 	}
+
+	//camera position update
+	downCam.setPosition(lander.model.getPosition() - glm::vec3(1,1,0));
+	downCam.lookAt(lander.model.getPosition() + glm::vec3(0,-1,0) * 10.0f);
+	chaseCam.lookAt(lander.model.getPosition());
+	// distance from chase cam to lander
+    float d = glm::distance(chaseCam.getPosition(), lander.model.getPosition());
+
+    // map distance to FOV (zoom)
+    float fov = ofMap(d,
+                      0,   500,    // distances
+                      35,  80,     // FOV range: small # = zoomed in
+                      true);
+
+    chaseCam.setFov(fov);
 }
 
 //--------------------------------------------------------------
@@ -303,7 +332,16 @@ void ofApp::draw() {
     if (!bHide) gui.draw();
     glDepthMask(true);
 
-    cam.begin();
+    // cam.begin();
+	if(useChase){
+		chaseCam.begin();
+	}
+	else if(useDown){
+		downCam.begin();
+	}
+	else{
+		cam.begin();
+	}
     ofPushMatrix();
     if (bWireframe) {
         ofDisableLighting();
@@ -395,17 +433,45 @@ void ofApp::draw() {
     }
 
 	
-
-	if (gameover) {
-		explosionEmitter.draw(explosionShader, cam);
+	if(useChase){
+		if (gameover) {
+			explosionEmitter.draw(explosionShader, chaseCam);
+		}
+		else{
+			//draw particle exhaust
+			exhaustEmitter.draw(particleShader, chaseCam);
+		}
+	}
+	else if(useDown){
+		if (gameover) {
+			explosionEmitter.draw(explosionShader, downCam);
+		}
+		else{
+			//draw particle exhaust
+			exhaustEmitter.draw(particleShader, downCam);
+		}
 	}
 	else{
-		//draw particle exhaust
-    	exhaustEmitter.draw(particleShader, cam);
+		if (gameover) {
+			explosionEmitter.draw(explosionShader, cam);
+		}
+		else{
+			//draw particle exhaust
+			exhaustEmitter.draw(particleShader, cam);
+		}
 	}
 
     ofPopMatrix();
-    cam.end();
+    // cam.end();
+	if(useChase){
+		chaseCam.end();
+	}
+	else if(useDown){
+		downCam.end();
+	}
+	else{
+		cam.end();
+	}
 
 	//AGL stats 
 	if(bShowAGL){
@@ -458,6 +524,18 @@ void ofApp::keyPressed(int key) {
 	if (key == OF_KEY_SHIFT) {
 		//bCollision = true;
 		shiftPressed = true;
+	}
+	if (key == '1'){
+		useChase = false;
+		useDown = false;
+	}
+	if (key == '2'){
+		useChase = true;
+		useDown = false;
+	}
+	if (key == '3'){
+		useChase = false;
+		useDown = true;
 	}
 
 	switch (key) {
