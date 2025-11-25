@@ -17,6 +17,7 @@
 // setup scene, lighting, state and load geometry
 //
 void ofApp::setup(){
+	glEnable(GL_PROGRAM_POINT_SIZE);
     bWireframe = false;
     bDisplayPoints = false;
     bAltKeyDown = false;
@@ -86,7 +87,7 @@ void ofApp::setup(){
 	explosionEmitter.position = landerPos;
 	explosionEmitter.rate = 100;
 	explosionEmitter.velocity = glm::vec3(0, -1, 0);
-	explosionEmitter.oneShot = true;
+	explosionEmitter.oneShot = false;
 
 	//setup sounds
 	thrustSound.load("sounds/thrustSound_edited.wav");       
@@ -393,11 +394,14 @@ void ofApp::draw() {
         }
     }
 
-	// draw particle exhaust
-    exhaustEmitter.draw(particleShader, cam);
+	
 
 	if (gameover) {
 		explosionEmitter.draw(explosionShader, cam);
+	}
+	else{
+		//draw particle exhaust
+    	exhaustEmitter.draw(particleShader, cam);
 	}
 
     ofPopMatrix();

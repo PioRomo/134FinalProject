@@ -6,5 +6,5 @@ attribute vec4 position;
 
 void main() {
     gl_Position = modelViewProjectionMatrix * position;
-    gl_PointSize = 30.0;
+    gl_PointSize = 20.0;
 }
