@@ -27,6 +27,11 @@ We have implemented full AABB collision with octrees. All contact between the te
 Collision resolution was also implemented with a reflective impulse force when the lander comes in contact with the terrain.
 Upon colliding with terrain too quickly, the lander will explode with a shader explosion.
 #### Camera
+##### Schuyler Ng
+We have 3 cameras implemented
+> Pressing "1" uses the ofEasyCam which allows the user to manually move the camera around as they would like.
+> Pressing "2" uses the chase camera which sits above the terrain and automatically tracks and zooms on the lander.
+> Pressing "3" uses the down camera which stays attached to the lander and faces straight down.
 #### Lighting 
 ###### Pio Romo
 Lighting was added to our scene. Very simple implementation taken from the monsterLight code. Additionally, a ship light was 
