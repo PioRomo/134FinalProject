@@ -104,7 +104,7 @@ void ofApp::setup(){
 	backgroundMusic.play();
 	backgroundMusic.setVolume(0.3);
 
-	explosionSound.load("sounds/explosionSound.wav"); 
+	explosionSound.load("sounds/explosionSound_edited.mp3"); 
 	explosionSound.setLoop(false); 
 
 	//Setting up lights
@@ -977,3 +977,4 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	}
 	else return glm::vec3(0, 0, 0);
 }
+
