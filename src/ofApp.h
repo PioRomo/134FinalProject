@@ -46,6 +46,7 @@ class ofApp : public ofBaseApp{
 		ofCamera downCam;
 		bool useChase = false;
 		bool useDown = false;
+		bool useThirdPerson = true;
 
 		ofxAssimpModelLoader terrain;
 		Vehicle lander;
@@ -66,6 +67,7 @@ class ofApp : public ofBaseApp{
 		ofxPanel gui;
 
 		bool gameover = false;
+		float explosionAnimationStart;
 
 		bool bAltKeyDown;
 		bool bCtrlKeyDown;

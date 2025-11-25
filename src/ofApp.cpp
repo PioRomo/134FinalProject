@@ -24,9 +24,8 @@ void ofApp::setup(){
     bCtrlKeyDown = false;
     bLanderLoaded = false;
     bTerrainSelected = true;
+	ofSetFrameRate(60);
 
-
-    cam.setDistance(20);
     cam.setNearClip(.1);
     cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
     ofSetVerticalSync(true);
@@ -91,8 +90,8 @@ void ofApp::setup(){
 	explosionShader.load("explosionParticle.vert", "explosionParticle.frag");
 	explosionEmitter.position = landerPos;
 	explosionEmitter.rate = 100;
-	explosionEmitter.velocity = glm::vec3(0, -1, 0);
-	explosionEmitter.oneShot = false;
+	explosionEmitter.velocity = glm::vec3(0, 0, 0);
+	explosionEmitter.oneShot = true;
 
 	//setup sounds
 	thrustSound.load("sounds/thrustSound_v2.mp3");       
@@ -152,7 +151,7 @@ void ofApp::setup(){
 	//chase cam sits in the middle above everything
 	chaseCam.setNearClip(0.1);
 	chaseCam.setFarClip(5000);
-	chaseCam.setPosition(glm::vec3(0,200,0));
+	chaseCam.setPosition(glm::vec3(0,300,0));
 	//always looks at the lander
 	chaseCam.lookAt(lander.model.getPosition());
 
@@ -162,6 +161,8 @@ void ofApp::setup(){
 	downCam.setPosition(lander.model.getPosition() - glm::vec3(1,1,0));
 	//always looks directly down
 	downCam.lookAt(lander.model.getPosition() + glm::vec3(0,-1,0) * 10.0f);
+	cam.setTarget(glm::vec3(0,40,0));
+	cam.setPosition(glm::vec3(20,60,0));
 }
 
 //--------------------------------------------------------------
@@ -245,14 +246,20 @@ void ofApp::update() {
 			averageNormal = glm::normalize(averageNormal);
 			
 			if(glm::length(lander.velocity)>20){
-				 cout << "game over due to collision check" << endl;
-				 glm::vec3 thrustVector = 100000 * averageNormal;
-				 ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
-				 thrust.updateForce(&lander);
-				 explosionSound.play(); 
-				 gameover = true;
-				
-				 break;
+				cout << "game over due to collision check" << endl;
+				for(int i = 0; i<20; i++){
+					Particle p(explosionEmitter.position,
+					glm::vec3(ofRandom(-1,1), ofRandom(0,1), ofRandom(-1,1))*40);
+					p.lifespan = 2.0;
+					explosionEmitter.particles.emplace_back(p);
+				}
+				glm::vec3 thrustVector = 100000 * averageNormal;
+				ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
+				thrust.updateForce(&lander);
+				explosionSound.play(); 
+				gameover = true;
+			
+				break;
 			}
 			else{
 				//move lander ouside of terrain if stuck inside
@@ -298,6 +305,7 @@ void ofApp::update() {
     }
 
     // update particle exhaust
+	//only show the exhaust if a movement key is being pressed
     if (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed) {
 		glm::vec3 landerPos = lander.model.getPosition();
 		//need to get the transform matrix from the ofxAssimpModelLoader
@@ -306,11 +314,13 @@ void ofApp::update() {
 		glm::vec3 landerDir = glm::normalize(glm::vec3(mat * glm::vec4(0, 0, -1, 0)));
     	exhaustEmitter.position = lander.model.getPosition() - lander.heading * 0.05f; 
     	exhaustEmitter.update();
-		explosionEmitter.position = lander.model.getPosition();
-		explosionEmitter.update();
 	} else {
 		exhaustEmitter.particles.clear(); 
 	}
+
+	//always update the position of explosion
+	explosionEmitter.position = lander.model.getPosition();
+	explosionEmitter.update();
 
 	//toggle ship light
 	if (bShipLightOn) {
@@ -322,7 +332,7 @@ void ofApp::update() {
 	}
 
 	//camera position update
-	downCam.setPosition(lander.model.getPosition() - glm::vec3(1,1,0));
+	downCam.setPosition(lander.model.getPosition() - glm::vec3(0,0.5,0));
 	downCam.lookAt(lander.model.getPosition() + glm::vec3(0,-1,0) * 10.0f);
 	chaseCam.lookAt(lander.model.getPosition());
 	// distance from chase cam to lander
@@ -335,6 +345,12 @@ void ofApp::update() {
                       true);
 
     chaseCam.setFov(fov);
+
+	//third person cam
+	if(useThirdPerson){
+		cam.setTarget(lander.model.getPosition());
+		cam.setDistance(glm::distance(lander.model.getPosition() + glm::normalize(glm::vec3(lander.model.getModelMatrix() * glm::vec4(0,0,-1,0))) * -40 + glm::vec3(0,40,0),lander.model.getPosition()));
+	}
 }
 
 //--------------------------------------------------------------
@@ -543,14 +559,26 @@ void ofApp::keyPressed(int key) {
 	if (key == '1'){
 		useChase = false;
 		useDown = false;
+		useThirdPerson = true;
+		cam.setPosition(lander.model.getPosition() + glm::normalize(glm::vec3(lander.model.getModelMatrix() * glm::vec4(0,0,-1,0))) * -40 + glm::vec3(0,40,0));
 	}
 	if (key == '2'){
 		useChase = true;
 		useDown = false;
+		useThirdPerson = false;
 	}
 	if (key == '3'){
 		useChase = false;
 		useDown = true;
+		useThirdPerson = false;
+	}
+	if (key == '4'){
+		useChase = false;
+		useDown = false;
+		useThirdPerson = false;
+		cam.setTarget(glm::vec3(0,40,0));
+		cam.setPosition(glm::vec3(20,60,0));
+		
 	}
 
 	switch (key) {
