@@ -1,6 +1,7 @@
 # 134 Final Project README! 
 #### Pio Romo, Schuyler Ng aka the Super Mario Bros
 
+##### Currently the terrain .obj file is too large to store on github.
 ## Requirements and How To's 
 #### LEM movement and rotation
 ###### Schulyer Ng
@@ -24,6 +25,7 @@ emitting particles when thrust is activated i.e. movement and rotation. Makes fo
 ##### Schuyler Ng
 We have implemented full AABB collision with octrees. All contact between the terrain and the lander are handled.
 Collision resolution was also implemented with a reflective impulse force when the lander comes in contact with the terrain.
+Upon colliding with terrain too quickly, the lander will explode with a shader explosion.
 #### Camera
 #### Lighting 
 ###### Pio Romo
