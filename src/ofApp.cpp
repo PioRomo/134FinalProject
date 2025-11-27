@@ -41,7 +41,7 @@ void ofApp::setup(){
 
     backgroundImage.load("geo/starfield.jpg");
 
-    terrain.loadModel("geo/134final_v12.obj");
+    terrain.loadModel("geo/134final_v13.obj");
     terrain.setScaleNormalization(false);
 	//terrain.setPosition(0, -30, 0);
 	//terrain.setRotation(0, 180, 0, 1, 0);  
@@ -94,9 +94,9 @@ void ofApp::setup(){
 	explosionEmitter.oneShot = true;
 
 	//setup sounds
-	thrustSound.load("sounds/thrustSound_v2.mp3");       
+	thrustSound.load("sounds/thrustSound_edited.wav");       
 	thrustSound.setLoop(true);  
-	thrustSound.setVolume(0.75);                 
+	thrustSound.setVolume(0.25);
 
 	backgroundMusic.load("sounds/backgroundMusic.mp3");  
 	backgroundMusic.setLoop(true);
@@ -105,6 +105,7 @@ void ofApp::setup(){
 
 	explosionSound.load("sounds/explosionSound_edited.mp3"); 
 	explosionSound.setLoop(false); 
+	explosionSound.setVolume(0.25);
 
 	//Setting up lights
 	ofSetGlobalAmbientColor(ofFloatColor(0.25, 0.25, 0.25, 1.0));
@@ -228,7 +229,7 @@ void ofApp::update() {
 	for(int i = 0; i<octrees.size(); i++){
 		octrees[i].intersect(bounds, octrees[i].root, colBoxList);
 		//we have a collision
-		if (!colBoxList.empty()) {
+		if (colBoxList.size() > 10) {
 			vector<int> collisionPoints;
 			//find the points of each box
 			for (auto & box : colBoxList) {
@@ -247,10 +248,10 @@ void ofApp::update() {
 			
 			if(glm::length(lander.velocity)>20){
 				cout << "game over due to collision check" << endl;
-				for(int i = 0; i<20; i++){
+				for(int i = 0; i<50; i++){
 					Particle p(explosionEmitter.position,
-					glm::vec3(ofRandom(-1,1), ofRandom(0,1), ofRandom(-1,1))*40);
-					p.lifespan = 2.0;
+					glm::vec3(ofRandom(-1,1), ofRandom(0,1), ofRandom(-1,1))*60);
+					p.lifespan = 1.0;
 					explosionEmitter.particles.emplace_back(p);
 				}
 				glm::vec3 thrustVector = 100000 * averageNormal;

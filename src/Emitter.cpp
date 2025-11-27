@@ -29,6 +29,7 @@ void Emitter::update() {
     float dt = ofGetLastFrameTime();
     for (auto &p : particles) {
         p.pos += p.vel * dt;
+        p.vel *= 0.99;
     }
 }
 
