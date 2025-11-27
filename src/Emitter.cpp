@@ -33,6 +33,20 @@ void Emitter::update() {
     }
 }
 
+void Emitter::clear() {
+    float t = ofGetElapsedTimef();
+
+    //Remove dead particles
+    particles.erase(
+        remove_if(
+            particles.begin(),
+            particles.end(),
+            [&](Particle &p) { return p.age() > p.lifespan; }
+        ),
+        particles.end()
+    );
+}
+
 void Emitter::draw(ofShader &shader, ofCamera &cam) {
     shader.begin();
 

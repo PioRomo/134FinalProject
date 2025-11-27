@@ -13,5 +13,6 @@ public:
 
     void update();
     void draw(ofShader &shader, ofCamera &cam);
+    void clear();
     void explode();    
 };
