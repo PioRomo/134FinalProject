@@ -55,7 +55,6 @@ class ofApp : public ofBaseApp{
 		Box testBox;
 		vector<Box> colBoxList;
 		bool bLanderSelected = false;
-		Octree octree;
 		vector<Octree> octrees;
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
@@ -66,8 +65,17 @@ class ofApp : public ofBaseApp{
 		ofxIntSlider numLevels;
 		ofxPanel gui;
 
+		bool exploded = false;
 		bool gameover = false;
 		float explosionAnimationStart;
+
+		glm::vec2 landing1;
+		float landing1Radius;
+		glm::vec2 landing2;
+		float landing2Radius;
+		
+		//2 min in milliseconds
+		float fuel = 120000;
 
 		bool bAltKeyDown;
 		bool bCtrlKeyDown;

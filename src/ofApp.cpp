@@ -48,7 +48,7 @@ void ofApp::setup(){
 
     
     lander.model.loadModel("geo/134Final_lander.obj");
-	lander.model.setPosition(0, 40, 0);
+	lander.model.setPosition(-25, 13, 200);
 	//lander.model.setRotation(0, 180, 0, 1, 0);
     bLanderLoaded = true;
     lander.model.setScaleNormalization(false);
@@ -59,8 +59,13 @@ void ofApp::setup(){
         bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
     }
 
+	//landing area positions (x,z)
+	landing1 = glm::vec2(73,-5);
+	landing1Radius = 20;
+	landing2 = glm::vec2(-200,-193);
+	landing2Radius = 8;
+
     // create sliders for testing
-    gui.setup();
     bHide = false;
 
     //  Create Octree for testing.
@@ -96,7 +101,7 @@ void ofApp::setup(){
 	//setup sounds
 	thrustSound.load("sounds/thrustSound_edited.wav");       
 	thrustSound.setLoop(true);  
-	thrustSound.setVolume(0.25);
+	thrustSound.setVolume(0.10);
 
 	backgroundMusic.load("sounds/backgroundMusic.mp3");  
 	backgroundMusic.setLoop(true);
@@ -105,7 +110,7 @@ void ofApp::setup(){
 
 	explosionSound.load("sounds/explosionSound_edited.mp3"); 
 	explosionSound.setLoop(false); 
-	explosionSound.setVolume(0.25);
+	explosionSound.setVolume(0.15);
 
 	//Setting up lights
 	ofSetGlobalAmbientColor(ofFloatColor(0.25, 0.25, 0.25, 1.0));
@@ -177,37 +182,38 @@ void ofApp::update() {
 	//we then multiply that matrix by (0,0,-1) which is the forward vector to get the heading
 	glm::vec3 worldHeading = glm::normalize(glm::vec3(mat * glm::vec4(0,0,-1,0)));
 	ofVec3f thrustVector(0, 0, 0);
-	// Horizontal thrust (XZ plane)
-	if (upPressed) {
-		thrustVector += ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
-	}
-	if (downPressed) {
-		thrustVector += ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
-	}
+	if(fuel>0){
+		// Horizontal thrust (XZ plane)
+		if (upPressed) {
+			thrustVector += ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
+		}
+		if (downPressed) {
+			thrustVector += ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
+		}
 
-	// Vertical thrust (Y axis)
-	if (shiftPressed) {
-		thrustVector += ofVec3f(0, 1, 0) * 50;
-	}
-	if (ctrlPressed) {
-		thrustVector += ofVec3f(0, -1, 0) * 50;
-	}
-	ThrustShapeForce thrust(thrustVector);
-	thrust.updateForce(&lander);
+		// Vertical thrust (Y axis)
+		if (shiftPressed) {
+			thrustVector += ofVec3f(0, 1, 0) * 50;
+		}
+		if (ctrlPressed) {
+			thrustVector += ofVec3f(0, -1, 0) * 50;
+		}
+		ThrustShapeForce thrust(thrustVector);
+		thrust.updateForce(&lander);
 
-	// rotate clockwise
-	if (rightPressed) {
-		RotationalShapeForce rotation(-100);
-		rotation.updateForce(&lander);
+		// rotate clockwise
+		if (rightPressed) {
+			RotationalShapeForce rotation(-100);
+			rotation.updateForce(&lander);
+		}
+		// rotate counterclockwise
+		if (leftPressed) {
+			RotationalShapeForce rotation(100);
+			rotation.updateForce(&lander);
+		}
 	}
-	// rotate counterclockwise
-	if (leftPressed) {
-		RotationalShapeForce rotation(100);
-		rotation.updateForce(&lander);
-	}
-	
 	//Updating sounds
-	if(thrustVector.length() > 0 || rightPressed || leftPressed){
+	if(fuel>0 && (upPressed || downPressed || ctrlPressed || shiftPressed || rightPressed || leftPressed)){
 		if (!thrustPlaying) {
         	thrustSound.play();
         	thrustPlaying = true;
@@ -246,23 +252,35 @@ void ofApp::update() {
 			}
 			averageNormal = glm::normalize(averageNormal);
 			
+			//going too fast exploded
 			if(glm::length(lander.velocity)>20){
 				cout << "game over due to collision check" << endl;
+				//load particles for explosion effect
 				for(int i = 0; i<50; i++){
 					Particle p(explosionEmitter.position,
 					glm::vec3(ofRandom(-1,1), ofRandom(0,1), ofRandom(-1,1))*60);
 					p.lifespan = 1.0;
 					explosionEmitter.particles.emplace_back(p);
 				}
+				//push the lander out
 				glm::vec3 thrustVector = 100000 * averageNormal;
 				ThrustShapeForce thrust(ofVec3f(thrustVector.x,thrustVector.y,thrustVector.z));
 				thrust.updateForce(&lander);
 				explosionSound.play(); 
-				gameover = true;
+				exploded = true;
 			
 				break;
 			}
+			//terrain collision resolution
 			else{
+				//check if we are in the landing area
+				glm::vec2 landerXZ(lander.model.getPosition().x,lander.model.getPosition().z);
+
+				//we are within the landing area
+				if(glm::distance(landerXZ,landing1)<landing1Radius || glm::distance(landerXZ,landing2)<landing2Radius){
+					cout << "Sucessfully landed" << endl;
+					gameover = true;
+				}
 				//move lander ouside of terrain if stuck inside
 				glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
 				lander.model.setPosition(newPosition.x, newPosition.y, newPosition.z);
@@ -275,7 +293,8 @@ void ofApp::update() {
 		}
 	}
 
-    lander.integrate();
+	if(!gameover)
+    	lander.integrate();
 
     // ALTITUDE AGL DETECTION
     if(bShowAGL){
@@ -307,7 +326,7 @@ void ofApp::update() {
 
     // update particle exhaust
 	//only show the exhaust if a movement key is being pressed
-    if (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed) {
+    if (fuel>0 && (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed)) {
 		glm::vec3 landerPos = lander.model.getPosition();
 		//need to get the transform matrix from the ofxAssimpModelLoader
 		glm::mat4 mat = lander.model.getModelMatrix();
@@ -315,8 +334,12 @@ void ofApp::update() {
 		glm::vec3 landerDir = glm::normalize(glm::vec3(mat * glm::vec4(0, 0, -1, 0)));
     	exhaustEmitter.position = lander.model.getPosition() - lander.heading * 0.05f; 
     	exhaustEmitter.update();
+
+		//also update the fuel every frame
+		if(ofGetFrameRate()>0)
+			fuel -= 1000/ofGetFrameRate();
 	} else {
-		exhaustEmitter.particles.clear(); 
+		exhaustEmitter.clear(); 
 	}
 
 	//always update the position of explosion
@@ -361,7 +384,7 @@ void ofApp::draw() {
     glClear(GL_DEPTH_BUFFER_BIT);
 
     glDepthMask(false);
-    if (!bHide) gui.draw();
+    // if (!bHide) gui.draw();
     glDepthMask(true);
 
     // cam.begin();
@@ -447,8 +470,9 @@ void ofApp::draw() {
     }
 
     if (pointSelected) {
-        ofVec3f p = octree.mesh.getVertex(selectedNode.points[0]);
+        ofVec3f p = octrees[0].mesh.getVertex(selectedNode.points[0]);
         ofVec3f d = p - cam.getPosition();
+		cout << p << endl;
         ofSetColor(ofColor::lightGreen);
         ofDrawSphere(p, .02 * d.length());
     }
@@ -466,28 +490,28 @@ void ofApp::draw() {
 
 	
 	if(useChase){
-		if (gameover) {
+		if (exploded) {
 			explosionEmitter.draw(explosionShader, chaseCam);
 		}
-		else{
+		else {
 			//draw particle exhaust
 			exhaustEmitter.draw(particleShader, chaseCam);
 		}
 	}
 	else if(useDown){
-		if (gameover) {
+		if (exploded) {
 			explosionEmitter.draw(explosionShader, downCam);
 		}
-		else{
+		else {
 			//draw particle exhaust
 			exhaustEmitter.draw(particleShader, downCam);
 		}
 	}
 	else{
-		if (gameover) {
+		if (exploded) {
 			explosionEmitter.draw(explosionShader, cam);
 		}
-		else{
+		else {
 			//draw particle exhaust
 			exhaustEmitter.draw(particleShader, cam);
 		}
@@ -509,10 +533,31 @@ void ofApp::draw() {
 	if(bShowAGL){
     	ofSetColor(ofColor::green);
     	if(altitudeAGL >= 0){
-        	ofDrawBitmapString("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40);
+			ofDrawBitmapStringHighlight("AGL: " + ofToString(altitudeAGL, 2) + " units", ofGetWidth() - 200, 40, ofColor(0, 0, 0, 180), ofColor::white);
     	} else {
-        	ofDrawBitmapString("AGL: N/A", ofGetWidth() - 200, 40);
+			ofDrawBitmapStringHighlight("AGL: N/A", ofGetWidth() - 200, 40, ofColor(0, 0, 0, 180), ofColor::white);
     	}
+	}
+
+	//draw fuel
+	ofSetColor(ofColor::orangeRed);
+	if(fuel >= 0){
+		float seconds = fuel/1000;
+		std::stringstream ss;
+		ss << std::fixed << std::setprecision(3) << seconds;
+		ofDrawBitmapStringHighlight("Fuel: " + ss.str() + " seconds", 20, 40, ofColor(0, 0, 0, 180), ofColor::white);
+	} else {
+		ofDrawBitmapStringHighlight("Fuel: empty", 20, 40, ofColor(0, 0, 0, 180), ofColor::white);
+	}
+
+	if(gameover) {
+		ofDrawBitmapStringHighlight("YOU WIN", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
+		ofDrawBitmapStringHighlight("Lander successfully landed!",ofGetWidth()/2 - 80, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
+	}
+
+	if(exploded) {
+		ofDrawBitmapStringHighlight("GAME OVER", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
+		ofDrawBitmapStringHighlight("Lander was destroyed!",ofGetWidth()/2 - 55, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
 	}
 }
 
@@ -748,11 +793,11 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 	Ray ray = Ray(Vector3(rayPoint.x, rayPoint.y, rayPoint.z),
 		Vector3(rayDir.x, rayDir.y, rayDir.z));
 
-	pointSelected = octree.intersect(ray, octree.root, selectedNode);
+	pointSelected = octrees[0].intersect(ray, octrees[0].root, selectedNode);
 	//cout << "Returned node with " << selectedNode.points.size() << " points" << endl;
 	//cout << "Returned has " << selectedNode.children.size() << " children" << endl;
 	if (pointSelected != nullptr) {
-		pointRet = octree.mesh.getVertex(selectedNode.points[0]);
+		pointRet = octrees[0].mesh.getVertex(selectedNode.points[0]);
 	}
 	return pointSelected;
 }
@@ -784,7 +829,7 @@ void ofApp::mouseDragged(int x, int y, int button) {
 		Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
 		colBoxList.clear();
-		octree.intersect(bounds, octree.root, colBoxList);
+		octrees[0].intersect(bounds, octrees[0].root, colBoxList);
 	
 
 		// if (bounds.overlap(testBox)) {
