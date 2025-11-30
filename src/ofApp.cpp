@@ -99,9 +99,9 @@ void ofApp::setup(){
 	explosionEmitter.oneShot = true;
 
 	//setup sounds
-	thrustSound.load("sounds/thrustSound_edited.wav");       
+	thrustSound.load("sounds/thrustSound_v2.mp3");       
 	thrustSound.setLoop(true);  
-	thrustSound.setVolume(0.10);
+	thrustSound.setVolume(0.75);
 
 	backgroundMusic.load("sounds/backgroundMusic.mp3");  
 	backgroundMusic.setLoop(true);
@@ -113,7 +113,7 @@ void ofApp::setup(){
 	explosionSound.setVolume(0.15);
 
 	//Setting up lights
-	ofSetGlobalAmbientColor(ofFloatColor(0.25, 0.25, 0.25, 1.0));
+	ofSetGlobalAmbientColor(ofFloatColor(0.8, 0.8, 0.8, 1.0));
 	// KEY LIGHT
 	keyLight.setup();
 	keyLight.enable();
@@ -121,7 +121,7 @@ void ofApp::setup(){
 	keyLight.setPosition(40, 60, 40);
 	keyLight.setDiffuseColor(ofFloatColor(1.0, 1.0, 1.0));      // normal brightness
 	keyLight.setSpecularColor(ofFloatColor(1.0, 1.0, 1.0));
-	keyLight.setAmbientColor(ofFloatColor(0.25, 0.25, 0.25));
+	keyLight.setAmbientColor(ofFloatColor(0.5, 0.5, 0.5));
 	keyLight.setAttenuation(0.2, 0.002, 0.0);
 	// FILL LIGHT
 	fillLight.setup();
@@ -130,7 +130,7 @@ void ofApp::setup(){
 	fillLight.setPosition(-50, 35, 45);
 	fillLight.setDiffuseColor(ofFloatColor(0.6, 0.6, 0.6));
 	fillLight.setSpecularColor(ofFloatColor(0.4, 0.4, 0.4));
-	fillLight.setAmbientColor(ofFloatColor(0.15, 0.15, 0.15));
+	fillLight.setAmbientColor(ofFloatColor(0.4, 0.4, 0.4));
 	fillLight.setAttenuation(0.2, 0.002, 0.0);
 
 	// RIM LIGHT
@@ -140,8 +140,17 @@ void ofApp::setup(){
 	rimLight.setPosition(0, 70, -70);
 	rimLight.setDiffuseColor(ofFloatColor(0.8, 0.8, 0.8));
 	rimLight.setSpecularColor(ofFloatColor(0.6, 0.6, 0.6));
-	rimLight.setAmbientColor(ofFloatColor(0.1, 0.1, 0.1));
+	rimLight.setAmbientColor(ofFloatColor(0.3, 0.3, 0.3));
 	rimLight.setAttenuation(0.2, 0.002, 0.0);
+
+	//SUN LIGHT 
+	sun.setup();
+	sun.enable();
+	sun.setDirectional();
+	sun.setOrientation(glm::vec3(-45, 45, 0));  
+	sun.setDiffuseColor(ofFloatColor(1.0, 1.0, 0.95));  
+	sun.setSpecularColor(ofFloatColor(1.0, 1.0, 0.9));
+	sun.setAmbientColor(ofFloatColor(0.3, 0.3, 0.3));
 
 
 	// SHIP LIGHT
@@ -182,21 +191,22 @@ void ofApp::update() {
 	//we then multiply that matrix by (0,0,-1) which is the forward vector to get the heading
 	glm::vec3 worldHeading = glm::normalize(glm::vec3(mat * glm::vec4(0,0,-1,0)));
 	ofVec3f thrustVector(0, 0, 0);
+	float thrustPower = 15.0f; 
 	if(fuel>0){
 		// Horizontal thrust (XZ plane)
 		if (upPressed) {
-			thrustVector += ofVec3f(worldHeading.x, 0, worldHeading.z) * 50;
+			thrustVector += ofVec3f(worldHeading.x, 0, worldHeading.z) * thrustPower;
 		}
 		if (downPressed) {
-			thrustVector += ofVec3f(-worldHeading.x, 0, -worldHeading.z) * 50;
+			thrustVector += ofVec3f(-worldHeading.x, 0, -worldHeading.z) * thrustPower;
 		}
 
 		// Vertical thrust (Y axis)
 		if (shiftPressed) {
-			thrustVector += ofVec3f(0, 1, 0) * 50;
+			thrustVector += ofVec3f(0, 1, 0) * thrustPower;
 		}
 		if (ctrlPressed) {
-			thrustVector += ofVec3f(0, -1, 0) * 50;
+			thrustVector += ofVec3f(0, -1, 0) * thrustPower; 
 		}
 		ThrustShapeForce thrust(thrustVector);
 		thrust.updateForce(&lander);
@@ -1051,4 +1061,3 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	}
 	else return glm::vec3(0, 0, 0);
 }
-
