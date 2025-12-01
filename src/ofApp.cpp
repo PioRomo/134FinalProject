@@ -273,7 +273,7 @@ void ofApp::update() {
 			averageNormal = glm::normalize(averageNormal);
 			
 			//going too fast exploded
-			if(glm::length(lander.velocity)>20){
+			if(glm::length(lander.velocity)>8){
 				cout << "game over due to collision check" << endl;
 				//load particles for explosion effect
 				for(int i = 0; i<50; i++){
@@ -348,7 +348,7 @@ void ofApp::update() {
 
     // update particle exhaust
 	//only show the exhaust if a movement key is being pressed
-    if (fuel>0 && (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed)) {
+    if (fuel>0 && !gameover && !exploded && (upPressed || downPressed || leftPressed || rightPressed || shiftPressed || ctrlPressed)) {
 		glm::vec3 landerPos = lander.model.getPosition();
 		//need to get the transform matrix from the ofxAssimpModelLoader
 		glm::mat4 mat = lander.model.getModelMatrix();
@@ -546,9 +546,9 @@ void ofApp::draw() {
 	float pulse = 5 + sin(t * 4.0) * 2.0;
 	ofSetColor(255, 0, 0);
 	ofDrawSphere(glm::vec3(landing1.x, 70, landing1.y), pulse);
-
+	ofSetColor(0, 255, 0);
 	ofDrawSphere(glm::vec3(landing2.x, 100, landing2.y), pulse);
-	
+	ofSetColor(0, 0, 255);
 	ofDrawSphere(glm::vec3(landing3.x, 120, landing3.y), pulse); 
 	ofEnableLighting(); 
 
@@ -588,12 +588,15 @@ void ofApp::draw() {
 	if(gameover) {
 		ofDrawBitmapStringHighlight("YOU WIN", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
 		ofDrawBitmapStringHighlight("Lander successfully landed!",ofGetWidth()/2 - 80, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
+		ofDrawBitmapStringHighlight("Press the spacebar to play again.",ofGetWidth()/2 - 100, ofGetHeight()/2 + 30,ofColor(0, 0, 0, 180), ofColor::green);
 		backgroundMusic.stop();
+		
 	}
 
 	if(exploded) {
 		ofDrawBitmapStringHighlight("GAME OVER", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
 		ofDrawBitmapStringHighlight("Lander was destroyed!",ofGetWidth()/2 - 55, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
+		ofDrawBitmapStringHighlight("Press the spacebar to play again.",ofGetWidth()/2 - 100, ofGetHeight()/2 + 30,ofColor(0, 0, 0, 180), ofColor::green);
 		backgroundMusic.stop();
 	}
 }
@@ -619,6 +622,10 @@ void ofApp::drawAxis(ofVec3f location) {
 void ofApp::keyPressed(int key) {
 
 	//lets us handle multiple keys pressed at the same time
+	if(key == ' ' && (gameover || exploded)){
+		restartGame(); 
+		return; 
+	}
 	if (key == 'd' || key == 'D') {
 		rightPressed = true;
 	}
@@ -1088,4 +1095,29 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	}
 	else return glm::vec3(0, 0, 0);
 }
+
+void ofApp::restartGame(){
+	gameover = false; 
+	exploded = false; 
+	lander.velocity = glm::vec3(0,0,0);
+	lander.model.setPosition(-25, 13, 200);
+	lander.forces.set(0,0,0);
+	fuel = 120000; 
+	backgroundMusic.play(); 
+	
+    cam.setTarget(glm::vec3(0,40,0));
+    cam.setPosition(glm::vec3(20,60,0));
+    chaseCam.lookAt(lander.model.getPosition());
+    downCam.lookAt(lander.model.getPosition());
+
+    exhaustEmitter.clear();
+    explosionEmitter.clear();
+    exhaustEmitter.position = lander.model.getPosition();
+    explosionEmitter.position = lander.model.getPosition();
+
+    upPressed = downPressed = leftPressed = rightPressed = shiftPressed = ctrlPressed = false;
+
+    colBoxList.clear();
+}
+
 
