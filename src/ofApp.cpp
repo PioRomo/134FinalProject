@@ -64,6 +64,8 @@ void ofApp::setup(){
 	landing1Radius = 20;
 	landing2 = glm::vec2(-200,-193);
 	landing2Radius = 8;
+	landing3 = glm::vec2(-180, 185);
+	landing3Radius = 20; 
 
     // create sliders for testing
     bHide = false;
@@ -111,6 +113,14 @@ void ofApp::setup(){
 	explosionSound.load("sounds/explosionSound_edited.mp3"); 
 	explosionSound.setLoop(false); 
 	explosionSound.setVolume(0.15);
+
+	winSound.load("sounds/levelcomplete.mp3");
+	winSound.setLoop(false);
+	winSound.setVolume(0.5);
+
+	gameOverSound.load("sounds/gameover.mp3");
+	gameOverSound.setLoop(false);
+	gameOverSound.setVolume(0.5);
 
 	//Setting up lights
 	ofSetGlobalAmbientColor(ofFloatColor(0.8, 0.8, 0.8, 1.0));
@@ -278,6 +288,7 @@ void ofApp::update() {
 				thrust.updateForce(&lander);
 				explosionSound.play(); 
 				exploded = true;
+				gameOverSound.play();
 			
 				break;
 			}
@@ -287,9 +298,10 @@ void ofApp::update() {
 				glm::vec2 landerXZ(lander.model.getPosition().x,lander.model.getPosition().z);
 
 				//we are within the landing area
-				if(glm::distance(landerXZ,landing1)<landing1Radius || glm::distance(landerXZ,landing2)<landing2Radius){
+				if(glm::distance(landerXZ,landing1)<landing1Radius || glm::distance(landerXZ,landing2)<landing2Radius || glm::distance(landerXZ,landing3)<landing3Radius){
 					cout << "Sucessfully landed" << endl;
 					gameover = true;
+					winSound.play();
 				}
 				//move lander ouside of terrain if stuck inside
 				glm::vec3 newPosition = lander.model.getPosition() + averageNormal * 0.01;
@@ -534,7 +546,10 @@ void ofApp::draw() {
 	float pulse = 5 + sin(t * 4.0) * 2.0;
 	ofSetColor(255, 0, 0);
 	ofDrawSphere(glm::vec3(landing1.x, 70, landing1.y), pulse);
+	ofSetColor(0, 255, 0);
 	ofDrawSphere(glm::vec3(landing2.x, 100, landing2.y), pulse);
+	ofSetColor(0, 0, 255);
+	ofDrawSphere(glm::vec3(landing3.x, 120, landing3.y), pulse); 
 	ofEnableLighting(); 
 
     ofPopMatrix();
@@ -573,11 +588,13 @@ void ofApp::draw() {
 	if(gameover) {
 		ofDrawBitmapStringHighlight("YOU WIN", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
 		ofDrawBitmapStringHighlight("Lander successfully landed!",ofGetWidth()/2 - 80, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
+		backgroundMusic.stop();
 	}
 
 	if(exploded) {
 		ofDrawBitmapStringHighlight("GAME OVER", ofGetWidth()/2 - 10, ofGetHeight()/2 - 10,ofColor(0, 0, 0, 180), ofColor::green);
 		ofDrawBitmapStringHighlight("Lander was destroyed!",ofGetWidth()/2 - 55, ofGetHeight()/2 + 10,ofColor(0, 0, 0, 180), ofColor::green);
+		backgroundMusic.stop();
 	}
 }
 
