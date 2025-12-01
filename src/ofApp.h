@@ -73,6 +73,8 @@ class ofApp : public ofBaseApp{
 		float landing1Radius;
 		glm::vec2 landing2;
 		float landing2Radius;
+		glm::vec2 landing3; 
+		float landing3Radius; 
 		
 		//2 min in milliseconds
 		float fuel = 120000;
@@ -128,6 +130,8 @@ class ofApp : public ofBaseApp{
 		ofSoundPlayer backgroundMusic;  
 		bool thrustPlaying = false;
 		ofSoundPlayer explosionSound; 
+		ofSoundPlayer winSound; 
+		ofSoundPlayer gameOverSound; 
 
 		//Lights  
 		ofLight keyLight, fillLight, rimLight, shipLight, sun; 
