@@ -527,6 +527,16 @@ void ofApp::draw() {
 		}
 	}
 
+	//Drawing Landing area spheres! 
+	ofDisableLighting(); 
+	//this adds a neat lil pulse animation! 
+	float t = ofGetElapsedTimef();
+	float pulse = 5 + sin(t * 4.0) * 2.0;
+	ofSetColor(255, 0, 0);
+	ofDrawSphere(glm::vec3(landing1.x, 70, landing1.y), pulse);
+	ofDrawSphere(glm::vec3(landing2.x, 100, landing2.y), pulse);
+	ofEnableLighting(); 
+
     ofPopMatrix();
     // cam.end();
 	if(useChase){
