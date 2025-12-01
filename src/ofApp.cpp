@@ -546,9 +546,9 @@ void ofApp::draw() {
 	float pulse = 5 + sin(t * 4.0) * 2.0;
 	ofSetColor(255, 0, 0);
 	ofDrawSphere(glm::vec3(landing1.x, 70, landing1.y), pulse);
-	ofSetColor(0, 255, 0);
+
 	ofDrawSphere(glm::vec3(landing2.x, 100, landing2.y), pulse);
-	ofSetColor(0, 0, 255);
+	
 	ofDrawSphere(glm::vec3(landing3.x, 120, landing3.y), pulse); 
 	ofEnableLighting(); 
 
@@ -1088,3 +1088,4 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	}
 	else return glm::vec3(0, 0, 0);
 }
+
