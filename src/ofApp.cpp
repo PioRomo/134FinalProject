@@ -27,11 +27,12 @@ void ofApp::setup(){
 	ofSetFrameRate(60);
 
     cam.setNearClip(.1);
-    cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
+    cam.setFov(65.5);
     ofSetVerticalSync(true);
     cam.disableMouseInput();
     ofEnableSmoothing();
     ofEnableDepthTest();
+	//enable dragging cam by default
 	cam.enableMouseInput();
 
 	//setting particle size 
@@ -44,13 +45,10 @@ void ofApp::setup(){
 
     terrain.loadModel("geo/134final_v13.obj");
     terrain.setScaleNormalization(false);
-	//terrain.setPosition(0, -30, 0);
-	//terrain.setRotation(0, 180, 0, 1, 0);  
 
     
     lander.model.loadModel("geo/134Final_lander.obj");
 	lander.model.setPosition(-25, 13, 200);
-	//lander.model.setRotation(0, 180, 0, 1, 0);
     bLanderLoaded = true;
     lander.model.setScaleNormalization(false);
 
@@ -233,6 +231,10 @@ void ofApp::update() {
 			rotation.updateForce(&lander);
 		}
 	}
+	//add a random turbulence force
+	TurbulenceShapeForce turbulence(ofVec3f(-2,-2,-2),ofVec3f(2,2,2));
+	turbulence.updateForce(&lander);
+
 	//Updating sounds
 	if(fuel>0 && (upPressed || downPressed || ctrlPressed || shiftPressed || rightPressed || leftPressed)){
 		if (!thrustPlaying) {
@@ -407,7 +409,6 @@ void ofApp::draw() {
     glClear(GL_DEPTH_BUFFER_BIT);
 
     glDepthMask(false);
-    // if (!bHide) gui.draw();
     glDepthMask(true);
 
     // cam.begin();
@@ -668,7 +669,6 @@ void ofApp::keyPressed(int key) {
 		useThirdPerson = false;
 		cam.setTarget(glm::vec3(0,40,0));
 		cam.setPosition(glm::vec3(20,60,0));
-		
 	}
 
 	switch (key) {
@@ -758,11 +758,9 @@ void ofApp::keyReleased(int key) {
 		downPressed = false;
 	}
 	if (key == OF_KEY_CONTROL) {
-		//bCtrlKeyDown = true;
 		ctrlPressed = false;
 	}
 	if (key == OF_KEY_SHIFT) {
-		//bCollision = true;
 		shiftPressed = false;
 	}
 
