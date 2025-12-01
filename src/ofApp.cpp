@@ -32,6 +32,7 @@ void ofApp::setup(){
     cam.disableMouseInput();
     ofEnableSmoothing();
     ofEnableDepthTest();
+	cam.enableMouseInput();
 
 	//setting particle size 
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -494,7 +495,6 @@ void ofApp::draw() {
     if (pointSelected) {
         ofVec3f p = octrees[0].mesh.getVertex(selectedNode.points[0]);
         ofVec3f d = p - cam.getPosition();
-		cout << p << endl;
         ofSetColor(ofColor::lightGreen);
         ofDrawSphere(p, .02 * d.length());
     }
@@ -646,23 +646,23 @@ void ofApp::keyPressed(int key) {
 		//bCollision = true;
 		shiftPressed = true;
 	}
-	if (key == '1'){
+	if (key == '1' || key == '!'){
 		useChase = false;
 		useDown = false;
 		useThirdPerson = true;
 		cam.setPosition(lander.model.getPosition() + glm::normalize(glm::vec3(lander.model.getModelMatrix() * glm::vec4(0,0,-1,0))) * -40 + glm::vec3(0,40,0));
 	}
-	if (key == '2'){
+	if (key == '2' || key == '@'){
 		useChase = true;
 		useDown = false;
 		useThirdPerson = false;
 	}
-	if (key == '3'){
+	if (key == '3' || key == '#'){
 		useChase = false;
 		useDown = true;
 		useThirdPerson = false;
 	}
-	if (key == '4'){
+	if (key == '4' || key == '$'){
 		useChase = false;
 		useDown = false;
 		useThirdPerson = false;
@@ -798,7 +798,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
 	// if rover is loaded, test for selection
 	//
-	if (bLanderLoaded) {
+	if (bLanderLoaded && !useChase && !useDown && !useThirdPerson) {
 		glm::vec3 origin = cam.getPosition();
 		glm::vec3 mouseWorld = cam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
 		glm::vec3 mouseDir = glm::normalize(mouseWorld - origin);
@@ -819,13 +819,13 @@ void ofApp::mousePressed(int x, int y, int button) {
 		}
 	}
 	else {
-		ofVec3f p;
-		float startTime = ofGetElapsedTimeMicros();
-		raySelectWithOctree(p);
-		float endTime = ofGetElapsedTimeMicros();
-		if (bTimingInfo) {
-			cout << std::fixed << std::setprecision(4) << "Ray intersection search time (ms): " << (endTime - startTime) / 1000 << endl;
-		}
+		// ofVec3f p;
+		// float startTime = ofGetElapsedTimeMicros();
+		// raySelectWithOctree(p);
+		// float endTime = ofGetElapsedTimeMicros();
+		// if (bTimingInfo) {
+		// 	cout << std::fixed << std::setprecision(4) << "Ray intersection search time (ms): " << (endTime - startTime) / 1000 << endl;
+		// }
 	}
 }
 
@@ -838,8 +838,6 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 		Vector3(rayDir.x, rayDir.y, rayDir.z));
 
 	pointSelected = octrees[0].intersect(ray, octrees[0].root, selectedNode);
-	//cout << "Returned node with " << selectedNode.points.size() << " points" << endl;
-	//cout << "Returned has " << selectedNode.children.size() << " children" << endl;
 	if (pointSelected != nullptr) {
 		pointRet = octrees[0].mesh.getVertex(selectedNode.points[0]);
 	}
@@ -874,25 +872,16 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 		colBoxList.clear();
 		octrees[0].intersect(bounds, octrees[0].root, colBoxList);
-	
-
-		// if (bounds.overlap(testBox)) {
-		// 	cout << "overlap" << endl;
-		// }
-		// else {
-		// 	cout << "OK" << endl;
-		// }
-
 
 	}
 	else {
-		ofVec3f p;
-		float startTime = ofGetElapsedTimeMicros();
-		raySelectWithOctree(p);
-		float endTime = ofGetElapsedTimeMicros();
-		if (bTimingInfo) {
-			cout << std::fixed << std::setprecision(4) << "Ray intersection search time (ms): " << (endTime - startTime)/1000 << endl;
-		}
+		// ofVec3f p;
+		// float startTime = ofGetElapsedTimeMicros();
+		// raySelectWithOctree(p);
+		// float endTime = ofGetElapsedTimeMicros();
+		// if (bTimingInfo) {
+		// 	cout << std::fixed << std::setprecision(4) << "Ray intersection search time (ms): " << (endTime - startTime)/1000 << endl;
+		// }
 	}
 }
 
@@ -977,31 +966,6 @@ void ofApp::savePicture() {
 	cout << "picture saved" << endl;
 }
 
-//--------------------------------------------------------------
-//
-// support drag-and-drop of model (.obj) file loading.  when
-// model is dropped in viewport, place origin under cursor
-//
-void ofApp::dragEvent2(ofDragInfo dragInfo) {
-
-//	ofVec3f point;
-//	mouseIntersectPlane(ofVec3f(0, 0, 0), cam.getZAxis(), point);
-//	if (lander.model.loadModel(dragInfo.files[0])) {
-//		lander.model.setScaleNormalization(false);
-////		lander.model.setScale(.1, .1, .1);
-//	//	lander.model.setPosition(point.x, point.y, point.z);
-//		lander.model.setPosition(1, 1, 0);
-//
-//		bLanderLoaded = true;
-//		for (int i = 0; i < lander.model.getMeshCount(); i++) {
-//			bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
-//		}
-//
-//		cout << "Mesh Count: " << lander.model.getMeshCount() << endl;
-//	}
-//	else cout << "Error: Can't load model" << dragInfo.files[0] << endl;
-}
-
 bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point) {
 	ofVec2f mouse(mouseX, mouseY);
 	ofVec3f rayPoint = cam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
@@ -1010,64 +974,6 @@ bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &
 	return (rayIntersectPlane(rayPoint, rayDir, planePoint, planeNorm, point));
 }
 
-//--------------------------------------------------------------
-//
-// support drag-and-drop of model (.obj) file loading.  when
-// model is dropped in viewport, place origin under cursor
-//
-void ofApp::dragEvent(ofDragInfo dragInfo) {
-	//if (lander.model.loadModel(dragInfo.files[0])) {
-	//	bLanderLoaded = true;
-	//	lander.model.setScaleNormalization(false);
-	//	lander.model.setPosition(0, 0, 0);
-	//	cout << "number of meshes: " << lander.model.getNumMeshes() << endl;
-	//	bboxList.clear();
-	//	for (int i = 0; i < lander.model.getMeshCount(); i++) {
-	//		bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
-	//	}
-
-	//	//		lander.model.setRotation(1, 180, 1, 0, 0);
-
-	//			// We want to drag and drop a 3D object in space so that the model appears 
-	//			// under the mouse pointer where you drop it !
-	//			//
-	//			// Our strategy: intersect a plane parallel to the camera plane where the mouse drops the model
-	//			// once we find the point of intersection, we can position the lander/lander
-	//			// at that location.
-	//			//
-
-	//			// Setup our rays
-	//			//
-	//	glm::vec3 origin = cam.getPosition();
-	//	glm::vec3 camAxis = cam.getZAxis();
-	//	glm::vec3 mouseWorld = cam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
-	//	glm::vec3 mouseDir = glm::normalize(mouseWorld - origin);
-	//	float distance;
-
-	//	bool hit = glm::intersectRayPlane(origin, mouseDir, glm::vec3(0, 0, 0), camAxis, distance);
-	//	if (hit) {
-	//		// find the point of intersection on the plane using the distance 
-	//		// We use the parameteric line or vector representation of a line to compute
-	//		//
-	//		// p' = p + s * dir;
-	//		//
-	//		glm::vec3 intersectPoint = origin + distance * mouseDir;
-
-	//		// Now position the lander's origin at that intersection point
-	//		//
-	//		glm::vec3 min = lander.model.getSceneMin();
-	//		glm::vec3 max = lander.model.getSceneMax();
-	//		float offset = (max.y - min.y) / 2.0;
-	//		lander.model.setPosition(intersectPoint.x, intersectPoint.y - offset, intersectPoint.z);
-
-	//		// set up bounding box for lander while we are at it
-	//		//
-	//		landerBounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-	//	}
-	//}
-
-
-}
 
 //  intersect the mouse ray with the plane normal to the camera 
 //  return intersection point.   (package code above into function)
