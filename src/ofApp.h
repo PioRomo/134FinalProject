@@ -130,7 +130,8 @@ class ofApp : public ofBaseApp{
 		ofSoundPlayer explosionSound; 
 
 		//Lights  
-		ofLight keyLight, fillLight, rimLight, shipLight; 
+		ofLight keyLight, fillLight, rimLight, shipLight, sun; 
 		bool bShipLightOn; 
+
 
 };
