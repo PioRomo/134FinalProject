@@ -60,7 +60,7 @@ void ofApp::setup(){
 
 	//landing area positions (x,z)
 	landing1 = glm::vec2(73,-5);
-	landing1Radius = 20;
+	landing1Radius = 21;
 	landing2 = glm::vec2(-200,-193);
 	landing2Radius = 8;
 	landing3 = glm::vec2(-180, 185);
@@ -1008,6 +1008,9 @@ void ofApp::restartGame(){
 	lander.forces.set(0,0,0);
 	fuel = 120000; 
 	backgroundMusic.play(); 
+	winSound.stop(); 
+	gameOverSound.stop(); 
+	
 	
     cam.setTarget(glm::vec3(0,40,0));
     cam.setPosition(glm::vec3(20,60,0));
@@ -1023,5 +1026,4 @@ void ofApp::restartGame(){
 
     colBoxList.clear();
 }
-
 
