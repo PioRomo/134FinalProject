@@ -255,6 +255,7 @@ void ofApp::update() {
     Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
     colBoxList.clear();
+
 	for(int i = 0; i<octrees.size(); i++){
 		octrees[i].intersect(bounds, octrees[i].root, colBoxList);
 		//we have a collision
@@ -318,6 +319,7 @@ void ofApp::update() {
 		}
 	}
 
+	//stop moving the lander once the game ends
 	if(!gameover)
     	lander.integrate();
 
@@ -389,10 +391,7 @@ void ofApp::update() {
     float d = glm::distance(chaseCam.getPosition(), lander.model.getPosition());
 
     // map distance to FOV (zoom)
-    float fov = ofMap(d,
-                      0,   500,    // distances
-                      35,  80,     // FOV range: small # = zoomed in
-                      true);
+    float fov = ofMap(d, 0, 500, 35,  80, true);
 
     chaseCam.setFov(fov);
 
@@ -513,6 +512,7 @@ void ofApp::draw() {
     }
 
 	
+	//draw the particle emitter using the correct camera in use
 	if(useChase){
 		if (exploded) {
 			explosionEmitter.draw(explosionShader, chaseCam);
