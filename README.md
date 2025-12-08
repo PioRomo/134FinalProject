@@ -21,12 +21,18 @@ is whole 'nother world. We built a particle system positioned at the thrust (bot
 emitting particles when thrust is activated i.e. movement and rotation. Makes for realistic exhaust!   
 > Thrust is activated on movement key press: W, A, S, D, Shift, Ctrl
 #### Collision Detection 
-##### Schuyler Ng
+###### Schuyler Ng
 We have implemented full AABB collision with octrees. All contact between the terrain and the lander are handled.
 Collision resolution was also implemented with a reflective impulse force when the lander comes in contact with the terrain.
 Upon colliding with terrain too quickly, the lander will explode with a shader explosion.
+#### Explosion Effect
+###### Schuyler Ng
+When the lander collides with the terrain at too high of a velocity, the lander will be launched and a shader particle emitter will emit an explosion effect are the crash location.
+#### Landing Areas
+###### Schuyler Ng
+We have implemented 3 landing areas located around the terrain. When the ship lands on these areas with sufficient velocity, the game will be won.
 #### Camera
-##### Schuyler Ng
+###### Schuyler Ng
 We have 4 cameras implemented
 > * Pressing "1" uses a third person camera that follows the lander.
 > * Pressing "2" uses the chase camera which sits above the terrain and automatically tracks and zooms on the lander.
@@ -38,8 +44,11 @@ Lighting was added to our scene. Very simple implementation taken from the monst
 added. 
 > Ship light can be toggled on and off with the 'P' key
 #### Sound
+###### Pio Romo
 Sounds were added: thrusting, background and explosions. 
 #### Dragging the Lander
+###### Schuyler Ng
+Using the provided dragging code, we made our lander draggable while in the diagnostic camera 4. While in the camera, press c to make the lander selectable, click the lander, and drag it around the screen.
 #### 2D Background Image
 ###### Pio Romo
 Starfield image gives the game a more "gamey" feel! 
