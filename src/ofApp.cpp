@@ -175,7 +175,7 @@ void ofApp::setup(){
 	//chase cam sits in the middle above everything
 	chaseCam.setNearClip(0.1);
 	chaseCam.setFarClip(5000);
-	chaseCam.setPosition(glm::vec3(0,300,0));
+	chaseCam.setPosition(glm::vec3(0,100,0));
 	//always looks at the lander
 	chaseCam.lookAt(lander.model.getPosition());
 
@@ -373,9 +373,10 @@ void ofApp::update() {
 
 	//toggle ship light
 	if (bShipLightOn) {
-    	shipLight.setPosition(lander.model.getPosition() + glm::vec3(0,1,0)); 
-    	shipLight.lookAt(lander.model.getPosition() + lander.heading * 2.0f);
-    	shipLight.enable();
+		glm::vec3 landerDir = glm::normalize(glm::vec3(mat * glm::vec4(0, 0, -1, 0)));
+    	shipLight.setPosition(lander.model.getPosition() + glm::vec3(0, -1, 0)); 
+    	shipLight.lookAt(lander.model.getPosition() + landerDir * 2.0f);
+		shipLight.enable();
 	} else {
     	shipLight.disable();
 	}
@@ -550,7 +551,7 @@ void ofApp::draw() {
 	ofSetColor(0, 255, 0);
 	ofDrawSphere(glm::vec3(landing2.x, 100, landing2.y), pulse);
 	ofSetColor(0, 0, 255);
-	ofDrawSphere(glm::vec3(landing3.x, 120, landing3.y), pulse); 
+	ofDrawSphere(glm::vec3(landing3.x, 120, landing3.y), pulse);
 	ofEnableLighting(); 
 
     ofPopMatrix();
